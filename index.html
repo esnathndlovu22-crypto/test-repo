@@ -1,142 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Engineering Overtime Analytics</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Engineering Overtime Dashboard</title>
 <style>
-:root{--bg:#f4f6fa;--panel:#fff;--ink:#172033;--muted:#68748a;--line:#e6eaf1;--navy:#14213d;--blue:#356ae6;--teal:#0d9488;--amber:#d97706;--red:#dc4444;--green:#16845b;--shadow:0 8px 24px rgba(20,33,61,.06)}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
-header{background:var(--navy);color:#fff;padding:22px max(22px,calc((100% - 1440px)/2));display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
-.brand{display:flex;gap:13px;align-items:center}.mark{width:42px;height:42px;border-radius:12px;background:#29416d;display:grid;place-items:center;font-size:21px}.brand h1{font-size:18px;margin:0;font-weight:750;letter-spacing:.2px}.brand p{margin:2px 0 0;color:#c3cee0;font-size:12px}
-.header-actions{display:flex;gap:9px;flex-wrap:wrap}.wrap{max-width:1440px;margin:auto;padding:24px}
-button,.file-label{border:0;border-radius:9px;padding:10px 14px;font:600 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:7px}.primary{background:var(--blue);color:white}.light{background:#fff;color:var(--navy)}.outline{background:#fff;border:1px solid var(--line);color:var(--ink)}button:hover,.file-label:hover{filter:brightness(.96)}input[type=file]{display:none}
-.notice{background:#fff8e8;border:1px solid #f4dfb2;color:#79520c;padding:11px 14px;border-radius:10px;margin-bottom:18px;font-size:12px}
-.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:17px}.filters{display:flex;gap:9px;flex-wrap:wrap}.filters select,.filters input{border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px 12px;color:var(--ink);min-width:145px;font:inherit}.filters input{min-width:190px}
-.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:13px;margin-bottom:16px}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow)}.kpi{padding:16px}.kpi .label{font-size:12px;color:var(--muted);font-weight:600}.kpi .value{font-size:27px;font-weight:800;letter-spacing:-.8px;margin:6px 0 2px}.kpi .sub{font-size:11px;color:var(--muted)}.kpi.red .value{color:var(--red)}.kpi.blue .value{color:var(--blue)}.kpi.green .value{color:var(--green)}
-.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:15px;margin-bottom:15px}.panel{padding:17px;min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}.panel h2{font-size:14px;margin:0;font-weight:750}.hint{font-size:11px;color:var(--muted)}.chart{height:250px;position:relative}.chart canvas{width:100%;height:100%}
-.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}.insight{background:#f7f9fd;border:1px solid var(--line);border-radius:10px;padding:12px}.insight strong{display:block;font-size:12px;margin-bottom:3px}.insight span{font-size:12px;color:var(--muted)}
-.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);font-size:12px}th{color:var(--muted);font-weight:700;background:#fafbfd;position:sticky;top:0}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}.status{display:inline-block;padding:4px 8px;border-radius:30px;font-size:10px;font-weight:750}.ok{background:#e7f6ef;color:#14734e}.over{background:#ffeded;color:#b42323}.empty{padding:24px;text-align:center;color:var(--muted)}
-.footer{padding:20px 0 5px;text-align:center;color:var(--muted);font-size:11px}
-@media(max-width:1050px){.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.wrap{padding:15px}.grid{grid-template-columns:1fr}.insights{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}header{padding:17px}.kpi .value{font-size:23px}}@media(max-width:420px){.kpis{grid-template-columns:1fr 1fr}.filters select,.filters input{min-width:100%;width:100%}.filters{width:100%}}
+:root{--navy:#08345B;--navy2:#092946;--teal:#17a7a5;--teal2:#49c4b9;--amber:#f5a10b;--green:#16a36d;--ink:#102a4c;--muted:#536984;--bg:#f5f8fb;--line:#d7e1eb;--white:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,#f7fafc,#eef4f8);color:var(--ink)}
+.header{background:linear-gradient(115deg,#0a3f6e,#082b4c);color:#fff;padding:18px 3.2%;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}.brand h1{margin:0;font-size:28px;letter-spacing:.02em}.brand p{margin:3px 0 0;color:#d8e7f3;font-size:16px}.demo{margin-left:auto;margin-right:auto;padding:9px 18px;border:1px solid #aa8737;border-radius:9px;color:#ffd96d;font-weight:800;font-size:13px}.period{font-size:14px}.period b{font-size:16px}
+.toolbar{background:#fff;padding:14px 3.2%;display:flex;align-items:end;gap:22px;border-bottom:1px solid var(--line);flex-wrap:wrap}.control{display:flex;align-items:center;gap:9px}.control label{font-size:13px;color:#263e59}.control select{min-width:180px;padding:9px 35px 9px 12px;border:1px solid #c9d5e1;border-radius:6px;background:#fff;color:#17324f}.export{margin-left:auto;padding:9px 15px;border:1px solid #3c91cf;color:#0d5f9e;background:#f5fbff;border-radius:6px;cursor:pointer;font-weight:700}
+main{padding:16px 2.5% 28px;max-width:1600px;margin:auto}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card,.panel{background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:9px;box-shadow:0 3px 10px rgba(18,52,76,.035)}.kpi{padding:18px;min-height:143px;display:flex;gap:17px}.icon{width:46px;height:46px;flex:0 0 46px;border-radius:50%;display:grid;place-items:center;background:#e8f4fc;color:#126aa6;font-size:22px;font-weight:900}.icon.warn{background:#fff0df;color:#e4840b}.icon.teal{background:#e6f7f6;color:#138886}.kpi h3{margin:1px 0 7px;font-size:13px;letter-spacing:.035em}.big{font-size:35px;font-weight:800;line-height:1.05;color:#073f68}.orange{color:#d66c00}.sub{font-size:14px;color:#344a64;margin-top:12px}.delta{color:var(--green);font-weight:800;margin-right:5px}
+.visuals{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.panel{padding:18px}.panel h2{font-size:19px;margin:0 0 18px}.chartbox{height:250px;position:relative}.legend{display:flex;gap:18px;justify-content:flex-end;font-size:12px;margin-top:-31px;margin-bottom:13px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.teal-dot{background:#1289a4}.amber-dot{background:#f5a10b}svg{width:100%;height:100%;overflow:visible}.gridline{stroke:#dce5ec;stroke-width:1}.axis{fill:#51667f;font-size:11px}.line1{fill:none;stroke:#1289a4;stroke-width:3}.line2{fill:none;stroke:#f5a10b;stroke-width:3}.point1{fill:#1289a4}.point2{fill:#f5a10b}
+.barrows{display:grid;gap:13px;padding-top:3px}.barrow{display:grid;grid-template-columns:130px 1fr 45px;gap:10px;align-items:center;font-size:12px}.barname{text-align:right}.track{height:23px;background:#edf3f6}.fill{height:100%;background:linear-gradient(90deg,#1bb6ad,#35a9a3)}.bval{font-weight:800}
+.attn{margin-top:14px;padding:16px 20px}.attn-title{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}.bang{width:31px;height:31px;background:#f3a10f;color:white;border-radius:50%;display:grid;place-items:center}.attention-body{margin-top:10px;background:linear-gradient(90deg,#fff8e9,#fffaf2);padding:11px 18px;border-radius:5px;font-size:13px}.attention-body div{margin:7px 0}.bullet{color:#f28d08;margin-right:10px}.foot{display:flex;justify-content:space-between;gap:20px;color:#60738c;font-size:11px;margin-top:13px;padding:0 6px}.private-note{font-weight:700;color:#405b74}
+@media(max-width:900px){.cards,.visuals{grid-template-columns:1fr 1fr}.visuals{grid-template-columns:1fr}.demo{margin:0}.export{margin-left:0}}@media(max-width:600px){.cards{grid-template-columns:1fr}.header{align-items:flex-start}.toolbar{gap:12px}.control{width:100%;justify-content:space-between}.control select{flex:1}.export{width:100%}.kpi{min-height:auto}.foot{flex-direction:column}.barrow{grid-template-columns:95px 1fr 38px}}
 </style>
 </head>
 <body>
-<header>
- <div class="brand"><div class="mark">↗</div><div><h1>Engineering Overtime Analytics</h1><p>Maintenance management • Section and employee performance</p></div></div>
- <div class="header-actions">
-  <label class="file-label light" for="csvFile">↑ Upload CSV</label><input id="csvFile" type="file" accept=".csv,text/csv">
-  <button class="light" id="downloadCsv">↓ Export filtered CSV</button>
- </div>
-</header>
-<main class="wrap">
- <div class="notice"><strong>Getting started:</strong> Upload your overtime CSV to populate the dashboard. No records are loaded by default. Data is processed locally in your browser.</div>
- <div class="toolbar">
-  <div><strong>Dashboard overview</strong><div class="hint" id="recordSummary">No data loaded • upload an overtime CSV to begin</div></div>
-  <div class="filters">
-   <select id="monthFilter" aria-label="Filter by month"><option value="all">All months</option></select>
-   <select id="sectionFilter" aria-label="Filter by section"><option value="all">All sections</option></select>
-   <select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option></select>
-   <input id="employeeSearch" type="search" placeholder="Search employee or ID…" aria-label="Search employee">
-   <button class="outline" id="resetFilters">Reset</button>
-  </div>
- </div>
- <section class="kpis">
-  <div class="card kpi blue"><div class="label">Total overtime</div><div class="value" id="kHours">—</div><div class="sub">Hours in current selection</div></div>
-  <div class="card kpi"><div class="label">Estimated expenditure</div><div class="value" id="kCost">—</div><div class="sub">Based on supplied hourly rates</div></div>
-  <div class="card kpi"><div class="label">Employees involved</div><div class="value" id="kEmployees">—</div><div class="sub">Unique employees in selection</div></div>
-  <div class="card kpi red"><div class="label">Above 56-hour limit</div><div class="value" id="kOver">—</div><div class="sub">Employee-months above threshold</div></div>
-  <div class="card kpi green"><div class="label">Average per employee</div><div class="value" id="kAverage">—</div><div class="sub">Hours per unique employee</div></div>
- </section>
- <section class="grid">
-  <div class="panel"><div class="panel-head"><h2>Overtime by section</h2><span class="hint">Hours</span></div><div class="chart"><canvas id="sectionChart"></canvas></div></div>
-  <div class="panel"><div class="panel-head"><h2>Monthly overtime trend</h2><span class="hint">Hours</span></div><div class="chart"><canvas id="trendChart"></canvas></div></div>
- </section>
- <section class="grid">
-  <div class="panel"><div class="panel-head"><h2>Overtime by category</h2><span class="hint">Hours</span></div><div class="chart"><canvas id="categoryChart"></canvas></div></div>
-  <div class="panel"><div class="panel-head"><h2>Top 10 employees</h2><span class="hint">Hours in selected period</span></div><div class="chart"><canvas id="employeeChart"></canvas></div></div>
- </section>
- <section class="panel" style="margin-bottom:15px"><div class="panel-head"><h2>Management observations</h2><span class="hint">Generated from current filters</span></div><div class="insights" id="insights"></div></section>
- <section class="panel">
-  <div class="panel-head"><div><h2>Employee overtime detail</h2><div class="hint">56 hours per employee per month threshold</div></div><span class="hint" id="tableCount"></span></div>
-  <div class="table-wrap"><table><thead><tr><th>Employee</th><th>Section</th><th>Month</th><th>Overtime category</th><th class="num">Hours</th><th class="num">Rate / hr</th><th class="num">Estimated cost</th><th>Monthly status</th></tr></thead><tbody id="employeeRows"></tbody></table></div>
- </section>
- <div class="footer">Engineering Overtime Analytics • Data is processed locally in your browser</div>
+<header class="header"><div class="brand"><h1>ENGINEERING OVERTIME</h1><p>Section-level management dashboard</p></div><div class="demo">DEMO • SECTION-LEVEL DATA</div><div class="period">▣ &nbsp; Reporting period: <b id="reportPeriod">October 2026</b></div></header>
+<div class="toolbar"><div class="control"><label>Section:</label><select id="section"><option value="All">All sections</option></select></div><div class="control"><label>Period:</label><select id="month"></select></div><button class="export" id="csv">⇩ &nbsp; Export report</button></div>
+<main>
+<section class="cards">
+<div class="card kpi"><div class="icon">◷</div><div><h3>TOTAL OT HOURS</h3><div class="big" id="totalOT">0 hrs</div><div class="sub"><span class="delta" id="delta">→ 0%</span> vs previous month</div></div></div>
+<div class="card kpi"><div class="icon warn">△</div><div><h3>EXCESSIVE OT HOURS</h3><div class="big orange" id="excessive">0 hrs</div><div class="sub" id="excessShare">0% of total overtime</div></div></div>
+<div class="card kpi"><div class="icon">%</div><div><h3>EXCESSIVE OT RATE</h3><div class="big" id="rate">0%</div><div class="sub">Section-level exposure indicator</div></div></div>
+<div class="card kpi"><div class="icon">▥</div><div><h3>HIGHEST OT SECTION</h3><div class="big" id="highest">-</div><div class="sub" id="highestSub">-</div></div></div>
+<div class="card kpi"><div class="icon">◔</div><div><h3>HIGHEST EXCESSIVE-OT SHARE</h3><div class="big" id="riskSection">-</div><div class="sub" id="riskSub">-</div></div></div>
+<div class="card kpi"><div class="icon teal">⌁</div><div><h3>MONTHLY CHANGE</h3><div class="big" id="monthChange">0 hrs</div><div class="sub" id="monthCompare">Current vs previous month</div></div></div>
+</section>
+<section class="visuals">
+<div class="panel"><h2>⌁ &nbsp; Monthly overtime trend</h2><div class="legend"><span><i class="dot teal-dot"></i>Total OT</span><span><i class="dot amber-dot"></i>Excessive OT</span></div><div class="chartbox"><svg id="trend" viewBox="0 0 620 250" preserveAspectRatio="none"></svg></div></div>
+<div class="panel"><h2>▥ &nbsp; Overtime by section</h2><div class="barrows" id="bars"></div></div>
+</section>
+<section class="card attn"><div class="attn-title"><span class="bang">!</span>Management attention</div><div class="attention-body" id="attention"></div></section>
+<div class="foot"><span>ⓘ Excessive OT = hours above 14 per employee per week. Threshold is a review indicator, not a fatigue assessment.</span><span class="private-note">Section-level prototype • No employee-level information</span></div>
 </main>
 <script>
-const LIMIT=56, currency=new Intl.NumberFormat('en-BW',{style:'currency',currency:'BWP',maximumFractionDigits:0});
-let data=[];
-const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString('en-BW',{maximumFractionDigits:1}), sum=(arr,key)=>arr.reduce((a,r)=>a+(Number(r[key])||0),0);
-function monthLabel(m){const [y,mo]=m.split('-');return new Date(Number(y),Number(mo)-1,1).toLocaleString('en',{month:'short',year:'2-digit'})}
-function filtered(){const mo=$('monthFilter').value,sec=$('sectionFilter').value,cat=$('categoryFilter').value,q=$('employeeSearch').value.trim().toLowerCase();return data.filter(r=>(mo==='all'||r.month===mo)&&(sec==='all'||r.section===sec)&&(cat==='all'||r.category===cat)&&(!q||(r.employee+' '+r.id).toLowerCase().includes(q)))}
-function unique(a){return [...new Set(a)].sort()}
-function fillSelect(id,values,label){const el=$(id),old=el.value;el.innerHTML='<option value="all">All '+label+'</option>'+values.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');if(values.includes(old))el.value=old}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function setupFilters(){fillSelect('monthFilter',unique(data.map(r=>r.month)).sort(), 'months');fillSelect('sectionFilter',unique(data.map(r=>r.section)),'sections');fillSelect('categoryFilter',unique(data.map(r=>r.category)),'categories')}
-function aggregate(rows,key){const out={};rows.forEach(r=>out[r[key]]=(out[r[key]]||0)+Number(r.hours||0));return out}
-function drawBar(canvasId,labels,values,horizontal){const c=$(canvasId),ctx=c.getContext('2d'),w=c.clientWidth,h=c.clientHeight,dpr=window.devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);const left=horizontal?105:38,right=16,top=12,bottom=horizontal?20:38,iw=w-left-right,ih=h-top-bottom,max=Math.max(1,...values)*1.15;ctx.font='11px system-ui';ctx.fillStyle='#718096';ctx.strokeStyle='#e8edf4';ctx.lineWidth=1;
-if(horizontal){const band=ih/Math.max(1,labels.length);labels.forEach((l,i)=>{const y=top+i*band+band*.2,bh=band*.58,bw=iw*values[i]/max;ctx.fillStyle='#718096';ctx.textAlign='right';ctx.fillText(short(l,15),left-9,y+bh*.72);ctx.fillStyle='#e9efff';ctx.fillRect(left,y,iw,bh);ctx.fillStyle='#356ae6';ctx.fillRect(left,y,bw,bh);ctx.fillStyle='#344054';ctx.textAlign='left';ctx.fillText(fmt(values[i]),left+bw+5,y+bh*.72)});}
-else{for(let i=0;i<=4;i++){const y=top+ih*i/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();ctx.fillStyle='#718096';ctx.textAlign='right';ctx.fillText(fmt(max*(1-i/4)),left-7,y+4)}const band=iw/Math.max(1,labels.length),bw=Math.min(38,band*.55);labels.forEach((l,i)=>{const bh=ih*values[i]/max,x=left+i*band+(band-bw)/2;ctx.fillStyle='#356ae6';ctx.fillRect(x,top+ih-bh,bw,bh);ctx.fillStyle='#667085';ctx.textAlign='center';ctx.fillText(short(l,9),x+bw/2,h-12)})}}
-function drawLine(canvasId,labels,values){const c=$(canvasId),ctx=c.getContext('2d'),w=c.clientWidth,h=c.clientHeight,dpr=window.devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);const L=40,R=15,T=15,B=35,iw=w-L-R,ih=h-T-B,max=Math.max(1,...values)*1.2;ctx.font='10px system-ui';for(let i=0;i<=4;i++){const y=T+ih*i/4;ctx.strokeStyle='#e8edf4';ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();ctx.fillStyle='#718096';ctx.textAlign='right';ctx.fillText(fmt(max*(1-i/4)),L-6,y+3)}const pts=values.map((v,i)=>({x:L+(labels.length===1?iw/2:i*iw/(labels.length-1)),y:T+ih-ih*v/max}));if(pts.length){ctx.strokeStyle='#0d9488';ctx.lineWidth=2.5;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();pts.forEach((p,i)=>{ctx.fillStyle='#0d9488';ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#667085';ctx.textAlign='center';ctx.fillText(short(labels[i],9),p.x,h-12)})}}
-function drawDonut(canvasId,labels,values){const c=$(canvasId),ctx=c.getContext('2d'),w=c.clientWidth,h=c.clientHeight,dpr=window.devicePixelRatio||1;c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);const total=values.reduce((a,b)=>a+b,0),cx=w*.31,cy=h*.5,r=Math.min(h*.34,w*.23),colors=['#356ae6','#0d9488','#d97706','#805ad5','#dc4444','#64748b'];let angle=-Math.PI/2;values.forEach((v,i)=>{const next=angle+(total?v/total:0)*Math.PI*2;ctx.beginPath();ctx.arc(cx,cy,r,angle,next);ctx.arc(cx,cy,r*.58,next,angle,true);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle=next});ctx.font='11px system-ui';labels.forEach((l,i)=>{const y=20+i*25;if(y>h-5)return;ctx.fillStyle=colors[i%colors.length];ctx.fillRect(w*.59,y-8,9,9);ctx.fillStyle='#475467';ctx.textAlign='left';ctx.fillText(short(l,22)+'  '+fmt(values[i])+'h',w*.59+15,y)})}
-function short(s,n){return s.length>n?s.slice(0,n-1)+'…':s}
-function render(){const rows=filtered(),hours=sum(rows,'hours'),cost=rows.reduce((a,r)=>a+r.hours*r.rate,0),emps=unique(rows.map(r=>r.id)),monthly={};rows.forEach(r=>{const k=r.id+'|'+r.month;monthly[k]=(monthly[k]||0)+r.hours});const over=Object.values(monthly).filter(v=>v>LIMIT).length;
-$('kHours').textContent=fmt(hours)+' h';$('kCost').textContent=currency.format(cost);$('kEmployees').textContent=emps.length;$('kOver').textContent=over;$('kAverage').textContent=emps.length?fmt(hours/emps.length)+' h':'0 h';$('recordSummary').textContent=rows.length+' records • '+(rows.length?'current filters':'no matching data');$('tableCount').textContent=rows.length+' records';
-const sec=aggregate(rows,'section'),cat=aggregate(rows,'category'),mon=aggregate(rows,'month');drawBar('sectionChart',Object.keys(sec),Object.values(sec),true);drawLine('trendChart',Object.keys(mon).sort(),Object.keys(mon).sort().map(k=>mon[k]));drawDonut('categoryChart',Object.keys(cat),Object.values(cat));
-const emp={};rows.forEach(r=>emp[r.id]={name:r.employee,hours:(emp[r.id]?.hours||0)+r.hours});const top=Object.values(emp).sort((a,b)=>b.hours-a.hours).slice(0,10);drawBar('employeeChart',top.map(e=>e.name),top.map(e=>e.hours),true);
-const highest=Object.entries(sec).sort((a,b)=>b[1]-a[1])[0],topCat=Object.entries(cat).sort((a,b)=>b[1]-a[1])[0],highPeople=Object.entries(monthly).filter(x=>x[1]>LIMIT).length;
-const observations=[['Section concentration',highest?highest[0]+' accounts for '+fmt(highest[1]/(hours||1)*100)+'% of selected overtime hours.':'No section data available.'],['Main overtime category',topCat?topCat[0]+' is the largest category at '+fmt(topCat[1])+' hours.':'No category data available.'],['56-hour threshold',highPeople?highPeople+' employee-month record(s) exceed the 56-hour threshold.':'No employee-month exceeds 56 hours in this selection.']];
-$('insights').innerHTML=observations.map(x=>'<div class="insight"><strong>'+esc(x[0])+'</strong><span>'+esc(x[1])+'</span></div>').join('');
-const sorted=[...rows].sort((a,b)=>b.hours-a.hours);$('employeeRows').innerHTML=sorted.length?sorted.map(r=>{const total=monthly[r.id+'|'+r.month]||0;return '<tr><td><strong>'+esc(r.employee)+'</strong><div class="hint">'+esc(r.id)+'</div></td><td>'+esc(r.section)+'</td><td>'+esc(monthLabel(r.month))+'</td><td>'+esc(r.category)+'</td><td class="num">'+fmt(r.hours)+'</td><td class="num">'+currency.format(r.rate)+'</td><td class="num">'+currency.format(r.hours*r.rate)+'</td><td><span class="status '+(total>LIMIT?'over':'ok')+'">'+(total>LIMIT?'Above limit':'Within limit')+'</span><div class="hint">'+fmt(total)+' h that month</div></td></tr>'}).join(''):'<tr><td colspan="8" class="empty">No records match the selected filters.</td></tr>';
-}
-function parseCSV(text){
- const source=text.replace(/^\uFEFF/,'');
- const rows=[];let row=[],field='',quoted=false;
- for(let i=0;i<source.length;i++){
-  const ch=source[i],next=source[i+1];
-  if(ch==='"'&&quoted&&next==='"'){field+='"';i++}
-  else if(ch==='"'){quoted=!quoted}
-  else if(ch===','&&!quoted){row.push(field.trim());field=''}
-  else if((ch==='\n'||ch==='\r')&&!quoted){
-   if(ch==='\r'&&next==='\n')i++;
-   row.push(field.trim());field='';
-   if(row.some(v=>v.trim()))rows.push(row);
-   row=[];
-  }else field+=ch;
- }
- row.push(field.trim());if(row.some(v=>v.trim()))rows.push(row);
- if(rows.length<2)throw Error('The CSV needs a header row and at least one data row.');
- const norm=x=>x.toLowerCase().replace(/[^a-z0-9]/g,'');
- const monthNames={january:'01',jan:'01',february:'02',feb:'02',march:'03',mar:'03',april:'04',apr:'04',may:'05',june:'06',jun:'06',july:'07',jul:'07',august:'08',aug:'08',september:'09',sep:'09',sept:'09',october:'10',oct:'10',november:'11',nov:'11',december:'12',dec:'12'};
- const headerIndex=rows.findIndex(r=>{const h=r.map(norm);return h.some(x=>['group','section','area','department'].includes(x))&&h.some(x=>['othours','overtimehours','hours','totalhours'].includes(x))&&h.some(x=>['month','period','date'].includes(x))});
- if(headerIndex<0)throw Error('Could not find the column headings. Expected Month, Group/Section and OT Hours/Hours.');
- const headers=rows[headerIndex].map(norm),idx=names=>headers.findIndex(h=>names.includes(h));
- const map={id:idx(['employeeid','id','employeenumber','persalnumber','personnelno','personnelnumber']),employee:idx(['employee','employeename','name','fullname']),section:idx(['section','area','department','group']),month:idx(['month','period','date']),category:idx(['category','overtimecategory','code','overtimecode']),hours:idx(['hours','overtimehours','totalhours','othours']),rate:idx(['rate','hourlyrate','rateperhour'])};
- if(map.section<0)throw Error('Missing required CSV column: section (or Group).');
- if(map.month<0)throw Error('Missing required CSV column: month.');
- if(map.hours<0)throw Error('Missing required CSV column: hours (or OT Hours).');
- const yearMatch=rows.slice(0,headerIndex+1).map(r=>r.join(' ')).join(' ').match(/20\d{2}/);
- const defaultYear=yearMatch?yearMatch[0]:String(new Date().getFullYear());
- const records=[];
- rows.slice(headerIndex+1).forEach((a,i)=>{
-  const get=k=>map[k]<0?'':(a[map[k]]||'');
-  let m=get('month').trim(),month='';
-  if(/^\d{4}-\d{2}/.test(m))month=m.slice(0,7);
-  else if(/^(\d{1,2})\/(\d{4})$/.test(m)){const p=m.split('/');month=p[1]+'-'+p[0].padStart(2,'0')}
-  else{const token=(m.match(/[A-Za-z]+/)||[])[0],mm=token?monthNames[token.toLowerCase()]:null;if(mm)month=defaultYear+'-'+mm}
-  const rawHours=get('hours').replace(/,/g,''),hours=Number(rawHours);
-  if(!get('section')&&!get('employee')&&!get('id')&&!rawHours)return;
-  const r={id:get('id')||get('employee')||'ROW-'+(i+1),employee:get('employee')||get('id')||'Unknown',section:get('section'),month,category:get('category')||'Overtime',hours,rate:Number(get('rate').replace(/,/g,''))||0};
-  if(!r.section||!/^\d{4}-\d{2}$/.test(r.month)||!Number.isFinite(r.hours)||r.hours<0)throw Error('Invalid section, month or hours on CSV data row '+(headerIndex+i+2)+'. Check that Month, Group and OT Hours contain valid values.');
-  records.push(r);
- });
- if(!records.length)throw Error('No valid overtime records were found below the headings.');
- return records;
-}
-$('csvFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=parseCSV(await file.text());data=parsed;setupFilters();$('monthFilter').value='all';$('sectionFilter').value='all';$('categoryFilter').value='all';$('employeeSearch').value='';document.querySelector('.notice').innerHTML='<strong>UPLOADED DATA:</strong> '+esc(file.name)+' • '+parsed.length+' records loaded locally. Upload another CSV to replace this dataset.';render()}catch(err){alert('Could not load CSV: '+err.message)}e.target.value=''});
-$('downloadCsv').addEventListener('click',()=>{const rows=filtered(),headers=['Employee ID','Employee','Section','Month','Overtime Category','Hours','Hourly Rate BWP','Estimated Cost BWP'];const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const body=[headers,...rows.map(r=>[r.id,r.employee,r.section,r.month,r.category,r.hours,r.rate,r.hours*r.rate])].map(row=>row.map(quote).join(',')).join('\r\n');const a=document.createElement('a'),url=URL.createObjectURL(new Blob([body],{type:'text/csv;charset=utf-8;'}));a.href=url;a.download='overtime-analysis.csv';a.click();URL.revokeObjectURL(url)});
-['monthFilter','sectionFilter','categoryFilter'].forEach(id=>$(id).addEventListener('change',render));$('employeeSearch').addEventListener('input',render);$('resetFilters').addEventListener('click',()=>{$('monthFilter').value='all';$('sectionFilter').value='all';$('categoryFilter').value='all';$('employeeSearch').value='';render()});
-window.addEventListener('resize',()=>render());setupFilters();render();
+// DEMO aggregate data only. Replace only with approved section-level values.
+const sections=['MTP','Recrush','Red Area','Engineering Services','JMP','Reliability'];
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
+const monthNames=['January','February','March','April','May','June','July','August','September','October'];
+const base={MTP:420,Recrush:280,'Red Area':200,'Engineering Services':160,JMP:90,Reliability:50};
+const multipliers=[1.42,1.35,1.12,1.18,1.04,1.00,0.98,1.06,1.02,1.00];
+const risk={MTP:.14,Recrush:.25,'Red Area':.16,'Engineering Services':.11,JMP:.09,Reliability:.08};
+const data=months.map((m,i)=>({month:m,values:Object.fromEntries(sections.map(s=>[s,{total:Math.round(base[s]*multipliers[i]),excess:Math.round(base[s]*multipliers[i]*risk[s])}]))}));
+const sectionSel=document.getElementById('section'),monthSel=document.getElementById('month');sections.forEach(s=>sectionSel.add(new Option(s,s)));months.forEach((m,i)=>monthSel.add(new Option(monthNames[i],i)));monthSel.value=9;
+const fmt=n=>new Intl.NumberFormat('en-BW',{maximumFractionDigits:0}).format(n);const selectedValues=i=>{const vals=data[i].values;return sectionSel.value==='All'?vals:{[sectionSel.value]:vals[sectionSel.value]}};
+function totals(i){const vals=selectedValues(i);return Object.values(vals).reduce((a,v)=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0})}
+function render(){const i=+monthSel.value,vals=selectedValues(i),t=totals(i),prev=i?totals(i-1):t,change=t.total-prev.total,pct=prev.total?change/prev.total:0;document.getElementById('reportPeriod').textContent=`${monthNames[i]} 2026`;document.getElementById('totalOT').textContent=`${fmt(t.total)} hrs`;document.getElementById('excessive').textContent=`${fmt(t.excess)} hrs`;document.getElementById('excessShare').textContent=`${(t.excess/t.total*100).toFixed(1)}% of total overtime`;document.getElementById('rate').textContent=`${(t.excess/t.total*100).toFixed(1)}%`;let d=document.getElementById('delta');d.textContent=`${pct<0?'↓':pct>0?'↑':'→'} ${Math.abs(pct*100).toFixed(1)}%`;d.style.color=pct<=0?'#16a36d':'#d86b00';const entries=Object.entries(vals);const high=entries.sort((a,b)=>b[1].total-a[1].total)[0],risky=[...entries].sort((a,b)=>(b[1].excess/b[1].total)-(a[1].excess/a[1].total))[0];document.getElementById('highest').textContent=high[0];document.getElementById('highestSub').textContent=`${fmt(high[1].total)} hrs • ${(high[1].total/t.total*100).toFixed(1)}% of selected total`;document.getElementById('riskSection').textContent=risky[0];document.getElementById('riskSub').textContent=`${(risky[1].excess/risky[1].total*100).toFixed(1)}% of section overtime`;document.getElementById('monthChange').textContent=`${change>0?'+':''}${fmt(change)} hrs`;document.getElementById('monthChange').style.color=change<=0?'#087b86':'#d66c00';document.getElementById('monthCompare').textContent=i?`${monthNames[i]} vs ${monthNames[i-1]}`:`${monthNames[i]} baseline`;
+renderBars(vals);renderTrend();document.getElementById('attention').innerHTML=`<div><span class="bullet">●</span><b>${high[0]}</b> contributes ${(high[1].total/t.total*100).toFixed(1)}% of overtime in the selected view.</div><div><span class="bullet">●</span>Review <b>${risky[0]}</b>: excessive hours represent ${(risky[1].excess/risky[1].total*100).toFixed(1)}% of section overtime.</div>`}
+function renderBars(vals){const sorted=Object.entries(vals).sort((a,b)=>b[1].total-a[1].total),max=Math.max(...sorted.map(x=>x[1].total));document.getElementById('bars').innerHTML=sorted.map(([s,v])=>`<div class="barrow"><div class="barname">${s}</div><div class="track"><div class="fill" style="width:${v.total/max*100}%"></div></div><div class="bval">${fmt(v.total)}</div></div>`).join('')}
+function renderTrend(){const series=data.map((_,i)=>totals(i)),max=Math.ceil(Math.max(...series.map(x=>x.total))/200)*200||200,w=620,h=250,l=42,r=12,t=10,b=30,px=i=>l+i*(w-l-r)/(months.length-1),py=v=>t+(max-v)*(h-t-b)/max;let svg='';for(let j=0;j<=4;j++){let y=t+j*(h-t-b)/4,val=max-j*max/4;svg+=`<line class="gridline" x1="${l}" y1="${y}" x2="${w-r}" y2="${y}"/><text class="axis" x="4" y="${y+4}">${fmt(val)}</text>`}months.forEach((m,i)=>svg+=`<text class="axis" x="${px(i)-8}" y="${h-8}">${m}</text>`);const pts=k=>series.map((v,i)=>`${px(i)},${py(v[k])}`).join(' ');svg+=`<polyline class="line1" points="${pts('total')}"/><polyline class="line2" points="${pts('excess')}"/>`;series.forEach((v,i)=>svg+=`<circle class="point1" cx="${px(i)}" cy="${py(v.total)}" r="4"/><circle class="point2" cx="${px(i)}" cy="${py(v.excess)}" r="4"/>`);document.getElementById('trend').innerHTML=svg}
+sectionSel.addEventListener('change',render);monthSel.addEventListener('change',render);document.getElementById('csv').addEventListener('click',()=>{const i=+monthSel.value,vals=selectedValues(i),rows=['Section,Month,Total OT Hours,Excessive OT Hours,Excessive OT Rate',...Object.entries(vals).map(([s,v])=>`"${s}",${monthNames[i]} 2026,${v.total},${v.excess},${(v.excess/v.total*100).toFixed(1)}%`)];const blob=new Blob([rows.join('\n')],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`overtime-${months[i].toLowerCase()}-2026.csv`;a.click();URL.revokeObjectURL(url)});render();
 </script>
-</body>
-</html>
+</body></html>
