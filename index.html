@@ -96,39 +96,41 @@ $('insights').innerHTML=observations.map(x=>'<div class="insight"><strong>'+esc(
 const sorted=[...rows].sort((a,b)=>b.hours-a.hours);$('employeeRows').innerHTML=sorted.length?sorted.map(r=>{const total=monthly[r.id+'|'+r.month]||0;return '<tr><td><strong>'+esc(r.employee)+'</strong><div class="hint">'+esc(r.id)+'</div></td><td>'+esc(r.section)+'</td><td>'+esc(monthLabel(r.month))+'</td><td>'+esc(r.category)+'</td><td class="num">'+fmt(r.hours)+'</td><td class="num">'+currency.format(r.rate)+'</td><td class="num">'+currency.format(r.hours*r.rate)+'</td><td><span class="status '+(total>LIMIT?'over':'ok')+'">'+(total>LIMIT?'Above limit':'Within limit')+'</span><div class="hint">'+fmt(total)+' h that month</div></td></tr>'}).join(''):'<tr><td colspan="8" class="empty">No records match the selected filters.</td></tr>';
 }
 function parseCSV(text){
- const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());
- if(lines.length<2)throw Error('The CSV needs a header row and at least one data row.');
- function parseLine(line){const out=[];let v='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'&&line[i+1]==='"'&&q){v+='"';i++}else if(ch==='"')q=!q;else if(ch===','&&!q){out.push(v.trim());v=''}else v+=ch}out.push(v.trim());return out}
+ const source=text.replace(/^\uFEFF/,'');
+ const rows=[];let row=[],field='',quoted=false;
+ for(let i=0;i<source.length;i++){
+  const ch=source[i],next=source[i+1];
+  if(ch==='"'&&quoted&&next==='"'){field+='"';i++}
+  else if(ch==='"'){quoted=!quoted}
+  else if(ch===','&&!quoted){row.push(field.trim());field=''}
+  else if((ch==='\n'||ch==='\r')&&!quoted){
+   if(ch==='\r'&&next==='\n')i++;
+   row.push(field.trim());field='';
+   if(row.some(v=>v.trim()))rows.push(row);
+   row=[];
+  }else field+=ch;
+ }
+ row.push(field.trim());if(row.some(v=>v.trim()))rows.push(row);
+ if(rows.length<2)throw Error('The CSV needs a header row and at least one data row.');
  const norm=x=>x.toLowerCase().replace(/[^a-z0-9]/g,'');
  const monthNames={january:'01',jan:'01',february:'02',feb:'02',march:'03',mar:'03',april:'04',apr:'04',may:'05',june:'06',jun:'06',july:'07',jul:'07',august:'08',aug:'08',september:'09',sep:'09',sept:'09',october:'10',oct:'10',november:'11',nov:'11',december:'12',dec:'12'};
- const headerIndex=lines.findIndex(line=>{const h=parseLine(line).map(norm);return h.some(x=>['group','section','area','department'].includes(x))&&h.some(x=>['othours','overtimehours','hours','totalhours'].includes(x))&&h.some(x=>['month','period','date'].includes(x))});
+ const headerIndex=rows.findIndex(r=>{const h=r.map(norm);return h.some(x=>['group','section','area','department'].includes(x))&&h.some(x=>['othours','overtimehours','hours','totalhours'].includes(x))&&h.some(x=>['month','period','date'].includes(x))});
  if(headerIndex<0)throw Error('Could not find the column headings. Expected Month, Group/Section and OT Hours/Hours.');
- const headers=parseLine(lines[headerIndex]).map(norm);
- const idx=names=>headers.findIndex(h=>names.includes(h));
- const map={
-  id:idx(['employeeid','id','employeenumber','persalnumber','personnelno','personnelnumber']),
-  employee:idx(['employee','employeename','name','fullname']),
-  section:idx(['section','area','department','group']),
-  month:idx(['month','period','date']),
-  category:idx(['category','overtimecategory','code','overtimecode']),
-  hours:idx(['hours','overtimehours','totalhours','othours']),
-  rate:idx(['rate','hourlyrate','rateperhour'])
- };
+ const headers=rows[headerIndex].map(norm),idx=names=>headers.findIndex(h=>names.includes(h));
+ const map={id:idx(['employeeid','id','employeenumber','persalnumber','personnelno','personnelnumber']),employee:idx(['employee','employeename','name','fullname']),section:idx(['section','area','department','group']),month:idx(['month','period','date']),category:idx(['category','overtimecategory','code','overtimecode']),hours:idx(['hours','overtimehours','totalhours','othours']),rate:idx(['rate','hourlyrate','rateperhour'])};
  if(map.section<0)throw Error('Missing required CSV column: section (or Group).');
  if(map.month<0)throw Error('Missing required CSV column: month.');
  if(map.hours<0)throw Error('Missing required CSV column: hours (or OT Hours).');
- const yearMatch=lines.slice(0,headerIndex+1).join(' ').match(/20\d{2}/);
+ const yearMatch=rows.slice(0,headerIndex+1).map(r=>r.join(' ')).join(' ').match(/20\d{2}/);
  const defaultYear=yearMatch?yearMatch[0]:String(new Date().getFullYear());
  const records=[];
- lines.slice(headerIndex+1).forEach((line,i)=>{
-  const a=parseLine(line),get=k=>map[k]<0?'':(a[map[k]]||'');
-  if(!a.some(x=>x.trim()))return;
+ rows.slice(headerIndex+1).forEach((a,i)=>{
+  const get=k=>map[k]<0?'':(a[map[k]]||'');
   let m=get('month').trim(),month='';
   if(/^\d{4}-\d{2}/.test(m))month=m.slice(0,7);
   else if(/^(\d{1,2})\/(\d{4})$/.test(m)){const p=m.split('/');month=p[1]+'-'+p[0].padStart(2,'0')}
-  else {const token=(m.match(/[A-Za-z]+/)||[])[0];const mm=token?monthNames[token.toLowerCase()]:null;if(mm)month=defaultYear+'-'+mm}
-  const rawHours=get('hours').replace(/,/g,'');
-  const hours=Number(rawHours);
+  else{const token=(m.match(/[A-Za-z]+/)||[])[0],mm=token?monthNames[token.toLowerCase()]:null;if(mm)month=defaultYear+'-'+mm}
+  const rawHours=get('hours').replace(/,/g,''),hours=Number(rawHours);
   if(!get('section')&&!get('employee')&&!get('id')&&!rawHours)return;
   const r={id:get('id')||get('employee')||'ROW-'+(i+1),employee:get('employee')||get('id')||'Unknown',section:get('section'),month,category:get('category')||'Overtime',hours,rate:Number(get('rate').replace(/,/g,''))||0};
   if(!r.section||!/^\d{4}-\d{2}$/.test(r.month)||!Number.isFinite(r.hours)||r.hours<0)throw Error('Invalid section, month or hours on CSV data row '+(headerIndex+i+2)+'. Check that Month, Group and OT Hours contain valid values.');
