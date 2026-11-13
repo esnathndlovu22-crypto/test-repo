@@ -30,9 +30,9 @@ button,.file-label{border:0;border-radius:9px;padding:10px 14px;font:600 13px in
  </div>
 </header>
 <main class="wrap">
- <div class="notice"><strong>DEMO DATA:</strong> The figures shown are illustrative sample records only and are not actual company performance. Upload an overtime CSV to replace the sample dataset. Currency amounts are indicative and depend on the hourly rates in the data.</div>
+ <div class="notice"><strong>Getting started:</strong> Upload your overtime CSV to populate the dashboard. No records are loaded by default. Data is processed locally in your browser.</div>
  <div class="toolbar">
-  <div><strong>Dashboard overview</strong><div class="hint" id="recordSummary">Sample dataset • all months</div></div>
+  <div><strong>Dashboard overview</strong><div class="hint" id="recordSummary">No data loaded • upload an overtime CSV to begin</div></div>
   <div class="filters">
    <select id="monthFilter" aria-label="Filter by month"><option value="all">All months</option></select>
    <select id="sectionFilter" aria-label="Filter by section"><option value="all">All sections</option></select>
@@ -61,17 +61,11 @@ button,.file-label{border:0;border-radius:9px;padding:10px 14px;font:600 13px in
   <div class="panel-head"><div><h2>Employee overtime detail</h2><div class="hint">56 hours per employee per month threshold</div></div><span class="hint" id="tableCount"></span></div>
   <div class="table-wrap"><table><thead><tr><th>Employee</th><th>Section</th><th>Month</th><th>Overtime category</th><th class="num">Hours</th><th class="num">Rate / hr</th><th class="num">Estimated cost</th><th>Monthly status</th></tr></thead><tbody id="employeeRows"></tbody></table></div>
  </section>
- <div class="footer">Engineering Overtime Analytics • Single-file demo • Data is processed locally in your browser</div>
+ <div class="footer">Engineering Overtime Analytics • Data is processed locally in your browser</div>
 </main>
 <script>
 const LIMIT=56, currency=new Intl.NumberFormat('en-BW',{style:'currency',currency:'BWP',maximumFractionDigits:0});
-const sections=['MTP','Red Area','Recrush','Services','Green Area'];
-const categories=['Call-out (2 hours)','Call-out (actual hours)','Weekend work','Public holiday work','Extended shift'];
-const months=['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
-const people=[['E1024','K. Molefe','MTP'],['E1031','T. Botumile','MTP'],['E1042','P. Keipidile','MTP'],['E1108','L. Mooketsi','Red Area'],['E1116','B. Moagi','Red Area'],['E1204','O. Ramasu','Recrush'],['E1219','M. Kgosietsile','Recrush'],['E1302','S. Ndlovu','Services'],['E1315','R. Motsumi','Services'],['E1407','D. Sechele','Green Area'],['E1412','N. Kelebeng','Green Area'],['E1055','G. Mothibi','MTP']];
 let data=[];
-function makeSample(){const rows=[];people.forEach((p,i)=>months.forEach((m,j)=>{if((i+j)%5===0)return;const hours=Number((8+((i*13+j*11)%53)).toFixed(1));const cat=categories[(i+j*2)%categories.length];const rate=[65,78,92,110][(i+j)%4];rows.push({id:p[0],employee:p[1],section:p[2],month:m,category:cat,hours:cat==='Call-out (2 hours)'?2:hours,rate:rate});}));return rows}
-data=makeSample();
 const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString('en-BW',{maximumFractionDigits:1}), sum=(arr,key)=>arr.reduce((a,r)=>a+(Number(r[key])||0),0);
 function monthLabel(m){const [y,mo]=m.split('-');return new Date(Number(y),Number(mo)-1,1).toLocaleString('en',{month:'short',year:'2-digit'})}
 function filtered(){const mo=$('monthFilter').value,sec=$('sectionFilter').value,cat=$('categoryFilter').value,q=$('employeeSearch').value.trim().toLowerCase();return data.filter(r=>(mo==='all'||r.month===mo)&&(sec==='all'||r.section===sec)&&(cat==='all'||r.category===cat)&&(!q||(r.employee+' '+r.id).toLowerCase().includes(q)))}
