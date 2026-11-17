@@ -119,8 +119,8 @@ function selectedValues(i){
   return out;
 }
 function totals(i){
-  const vals=selectedValues(i);
-  return Object.values(vals).reduce((a,v)=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0});
+  const vals=data[i]?.values||{};
+  return Object.entries(vals).filter(([section])=>sectionSel.value==='All'||section===sectionSel.value).reduce((a,[,v])=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0});
 }
 function showEmpty(id,message){document.getElementById(id).innerHTML='<div class="empty-state">'+esc(message)+'</div>';}
 function tableHTML(headers,rows){
