@@ -279,4 +279,200 @@ document.getElementById('csv').addEventListener('click',()=>{
 });
 populateSelectors();render();
 </script>
+<!-- ===== OT DETAIL ADD-ON =====
+Adds: month/week tree filter and an Employee & workshop detail tab.
+All processing remains local in the browser. -->
+<style>
+.tabs{display:flex;gap:8px;margin:0 1.3%;padding:0}
+.tabs button{padding:10px 20px;border:1px solid #1e3149;border-bottom:0;border-radius:13px 13px 0 0;background:rgba(255,255,255,.45);color:#26364c;font:700 14px Inter,"Segoe UI",Arial,sans-serif;cursor:pointer}
+.tabs button[aria-selected="true"]{background:rgba(255,255,255,.92);color:#0b3a66}
+.tabs button:focus-visible,.tree-btn:focus-visible,.caret:focus-visible,.tr input:focus-visible{outline:3px solid #292caa;outline-offset:2px}
+.tree-ctl{position:relative}
+.tree-btn{width:100%;text-align:left;padding:8px 10px;border:1px solid #d5d9e2;border-radius:6px;background:rgba(255,255,255,.35);color:#17324f;font:inherit;font-size:14px;cursor:pointer}
+.tree-btn:after{content:"▾";float:right}
+.tree-pop{position:absolute;z-index:30;top:100%;left:0;margin-top:6px;width:min(300px,92vw);max-height:340px;overflow:auto;background:#fff;border:1px solid #24364d;border-radius:13px;padding:10px 12px;box-shadow:0 8px 24px rgba(10,35,74,.28)}
+.tr{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:13px;cursor:pointer}
+.tr.all{font-weight:800;border-bottom:1px solid #e4ebf1;margin-bottom:4px;padding-bottom:8px}
+.trow{display:flex;align-items:center;gap:4px}
+.caret{width:24px;height:24px;border:0;background:none;color:#46607a;cursor:pointer;font-size:12px;transition:transform .15s}
+.caret[aria-expanded="true"]{transform:rotate(90deg)}
+.tw{padding-left:32px}
+#detailMain .dgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:0}
+#detailMain .panel h2{margin-bottom:10px}
+#detailMain .scroll{max-height:330px;overflow:auto;border:1px solid #e4ebf1;border-radius:6px;background:#fff}
+#detailMain .data-table th{position:sticky;top:0;z-index:1}
+#detailMain .data-table tfoot td{position:sticky;bottom:0;background:#eef4f8;font-weight:800;border-top:2px solid #b9c8d6}
+#detailMain .data-table td.bad,.x{color:#b42318}
+.dlegend{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:11px;color:#626b78;margin:-2px 0 8px}
+.dlegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+.dtools{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:12px}
+.dtools input[type=search]{padding:7px 10px;border:1px solid #c9d5e1;border-radius:6px;min-width:180px}
+.dnote{margin:8px 0 0;font-size:11px;color:#60738c}
+.wk{text-align:right;white-space:nowrap}
+.wk .t{display:block}.wk .x{display:block;font-size:11px;font-weight:700}
+td.tot-ok{background:#bfe9d3;font-weight:800}td.tot-bad{background:#f6c9c9;font-weight:800;color:#b42318}
+.srow{display:grid;grid-template-columns:minmax(90px,150px) 1fr 54px;gap:8px;align-items:center;font-size:12px;margin-bottom:8px}
+.srow .nm{text-align:right;overflow-wrap:anywhere}
+.sbar{display:flex;height:24px;background:#edf3f6}
+.sbar span{display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;overflow:hidden}
+#dWork{height:340px;display:block}
+@media(max-width:900px){#detailMain .dgrid{grid-template-columns:1fr}.tabs{margin:0 2%}}
+@media(max-width:600px){.srow{grid-template-columns:84px 1fr 46px}}
+</style>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>new Intl.NumberFormat('en-BW',{maximumFractionDigits:1}).format(Number(n)||0);
+const wn=w=>parseInt(String(w).replace(/\D/g,''))||0;
+let rec=[],sel=new Set();
+const toolbar=document.querySelector('.toolbar'),oldCtl=$('month').closest('.control');
+oldCtl.style.display='none';
+const ctl=document.createElement('div');ctl.className='control tree-ctl';
+ctl.innerHTML='<label for="treeBtn">Date (months / weeks)</label><button type="button" id="treeBtn" class="tree-btn" aria-expanded="false" aria-controls="treePop">Upload a CSV to choose periods</button><div class="tree-pop" id="treePop" hidden></div>';
+toolbar.insertBefore(ctl,oldCtl);
+const tabs=document.createElement('nav');tabs.className='tabs';tabs.setAttribute('role','tablist');
+tabs.innerHTML='<button type="button" role="tab" aria-selected="true" data-t="ov">Overview</button><button type="button" role="tab" aria-selected="false" data-t="dt">Employee &amp; workshop detail</button>';
+toolbar.after(tabs);
+const mainEl=document.querySelector('main'),dm=document.createElement('main');
+dm.id='detailMain';dm.hidden=true;
+dm.innerHTML='<div class="dgrid">'
++'<section class="panel"><h2>Top employees by overtime worked</h2><div id="dEmp"></div></section>'
++'<section class="panel"><h2>Overtime within and above the limit, per employee</h2><div class="dlegend"><span><i style="background:#168ff5"></i>Within limit</span><span><i style="background:#292caa"></i>Excessive OT</span></div><div id="dStack"></div></section>'
++'<section class="panel"><h2>Weekly &amp; monthly limit exceedance per employee</h2><div class="dtools"><input id="dSearch" type="search" placeholder="Search employee" aria-label="Search employee"><label><input type="checkbox" id="dOver"> Over limit only</label></div><div id="dLimit"></div><p class="dnote">Each cell shows total OT hours; hours above the 14 per week limit appear in red underneath.</p></section>'
++'<section class="panel"><h2>Overtime ranking by workshop</h2><div class="dlegend"><span><i style="background:#168ff5"></i>OT hours</span><span><i style="background:#292caa"></i>Excessive OT hours</span><span><i style="background:#ed7138"></i>Employees (right axis)</span></div><svg id="dWork" viewBox="0 0 620 340" role="img" aria-label="Overtime hours, excessive overtime hours and employee count by workshop"></svg></section>'
++'</div>';
+mainEl.after(dm);
+function csv(text){const rows=[];let r=[],f='',q=false;text=text.replace(/^\uFEFF/,'');
+ for(let i=0;i<text.length;i++){const c=text[i];
+  if(c==='"'){if(q&&text[i+1]==='"'){f+='"';i++}else q=!q}
+  else if(c===','&&!q){r.push(f.trim());f=''}
+  else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;r.push(f.trim());f='';if(r.some(Boolean))rows.push(r);r=[]}
+  else f+=c}
+ if(f||r.length){r.push(f.trim());if(r.some(Boolean))rows.push(r)}return rows}
+function load(text){
+ const rows=csv(text),n=v=>(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const hi=rows.findIndex(r=>{const h=r.map(n);return h.includes('month')&&h.includes('othours')});
+ if(hi<0)return;
+ const h=rows[hi].map(n),ix=k=>h.indexOf(k);
+ const c={m:ix('month'),w:ix('week'),id:ix('personnelno'),name:ix('fullname'),unit:ix('organizationalunit'),eng:ix('engineerincharge'),ot:ix('othours'),ex:ix('excessiveothours')};
+ rec=[];
+ for(const r of rows.slice(hi+1)){
+  const raw=(r[c.m]||'').toLowerCase(),mo=MONTHS.find(M=>M.toLowerCase()===raw||(raw.length>=3&&M.toLowerCase().startsWith(raw.slice(0,3))));
+  const ot=parseFloat((r[c.ot]||'').replace(/,/g,''));
+  if(!mo||!isFinite(ot))continue;
+  rec.push({m:mo,w:r[c.w]||'Week ?',id:r[c.id]||r[c.name],name:r[c.name]||'Name not provided',unit:r[c.unit]||'Not specified',eng:r[c.eng]||'Not specified',ot,ex:parseFloat((r[c.ex]||'0').replace(/,/g,''))||0});
+ }
+ sel=new Set(rec.map(x=>x.m+'|'+x.w));
+ buildTree();draw();syncOverview();
+}
+function struct(){const o={};rec.forEach(x=>{(o[x.m]=o[x.m]||new Set()).add(x.w)});
+ return MONTHS.filter(m=>o[m]).map(m=>[m,[...o[m]].sort((a,b)=>wn(a)-wn(b))])}
+function buildTree(){
+ $('treePop').innerHTML='<label class="tr all"><input type="checkbox" data-all> Select all</label>'
+ +struct().map(([m,ws])=>'<div class="tm"><div class="trow"><button type="button" class="caret" aria-label="Show weeks for '+m+'" aria-expanded="false" data-c="'+m+'">▸</button><label class="tr"><input type="checkbox" data-m="'+m+'"> '+m+'</label></div><div class="tw" data-w="'+m+'" hidden>'
+ +ws.map(w=>'<label class="tr"><input type="checkbox" data-k="'+esc(m+'|'+w)+'"> '+esc(w)+'</label>').join('')+'</div></div>').join('');
+ syncTree();
+}
+function syncTree(){
+ const st=struct(),pop=$('treePop');let tot=0,on=0;
+ st.forEach(([m,ws])=>{const k=ws.filter(w=>sel.has(m+'|'+w)).length;tot+=ws.length;on+=k;
+  const b=pop.querySelector('[data-m="'+m+'"]');b.checked=k===ws.length;b.indeterminate=k>0&&k<ws.length;
+  ws.forEach(w=>{const cb=[...pop.querySelectorAll('[data-k]')].find(x=>x.dataset.k===m+'|'+w);if(cb)cb.checked=sel.has(m+'|'+w)})});
+ const a=pop.querySelector('[data-all]');if(a){a.checked=tot>0&&on===tot;a.indeterminate=on>0&&on<tot}
+ $('treeBtn').textContent=!tot?'Upload a CSV to choose periods':on===tot?'All months and weeks':on===0?'Nothing selected':on+' of '+tot+' weeks selected';
+}
+$('treePop').addEventListener('change',e=>{
+ const t=e.target,st=struct(),put=(k,v)=>v?sel.add(k):sel.delete(k);
+ if('all' in t.dataset)st.forEach(([m,ws])=>ws.forEach(w=>put(m+'|'+w,t.checked)));
+ else if(t.dataset.m)st.find(x=>x[0]===t.dataset.m)[1].forEach(w=>put(t.dataset.m+'|'+w,t.checked));
+ else if(t.dataset.k)put(t.dataset.k,t.checked);
+ syncTree();draw();syncOverview();
+});
+$('treePop').addEventListener('click',e=>{
+ const c=e.target.dataset&&e.target.dataset.c;if(!c)return;
+ const w=$('treePop').querySelector('[data-w="'+c+'"]'),open=w.hidden;
+ w.hidden=!open;e.target.setAttribute('aria-expanded',String(open));
+});
+function setPop(open){$('treePop').hidden=!open;$('treeBtn').setAttribute('aria-expanded',String(open))}
+$('treeBtn').addEventListener('click',()=>setPop($('treePop').hidden));
+document.addEventListener('click',e=>{if(!ctl.contains(e.target))setPop(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setPop(false)});
+function syncOverview(){
+ const ms=struct().filter(([m,ws])=>ws.some(w=>sel.has(m+'|'+w))).map(x=>x[0]);
+ if(!ms.length)return;
+ const s=$('month'),i=[...s.options].findIndex(o=>o.text.startsWith(ms[ms.length-1]));
+ if(i>=0&&s.selectedIndex!==i){s.selectedIndex=i;s.dispatchEvent(new Event('change'))}
+}
+tabs.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ tabs.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',String(x===b)));
+ mainEl.hidden=b.dataset.t!=='ov';dm.hidden=b.dataset.t!=='dt';
+});
+const rows=()=>rec.filter(x=>sel.has(x.m+'|'+x.w)&&($('section').value==='All'||x.unit===$('section').value));
+function agg(rs){const p=new Map();
+ rs.forEach(x=>{let e=p.get(x.id);if(!e){e={name:x.name,eng:new Set(),ot:0,ex:0,w:{}};p.set(x.id,e)}
+  e.eng.add(x.eng);e.ot+=x.ot;e.ex+=x.ex;const k=e.w[x.w]=e.w[x.w]||{ot:0,ex:0};k.ot+=x.ot;k.ex+=x.ex});
+ return [...p.values()]}
+const none=(id,msg)=>{$(id).innerHTML='<div class="empty-state">'+esc(msg)+'</div>'};
+const MSG='Upload a CSV file, then choose periods, to see this analysis.';
+function drawEmp(rs){
+ if(!rs.length)return none('dEmp',rec.length?'No records for the selected periods and section.':MSG);
+ const a=agg(rs).sort((x,y)=>y.ot-x.ot),T=a.reduce((s,e)=>({ex:s.ex+e.ex,ot:s.ot+e.ot}),{ex:0,ot:0});
+ $('dEmp').innerHTML='<div class="scroll"><table class="data-table"><thead><tr><th>Full name</th><th>Engineer in charge</th><th class="num">Excessive OT</th><th class="num">Total OT</th></tr></thead><tbody>'
+ +a.map(e=>'<tr><td>'+esc(e.name)+'</td><td>'+esc([...e.eng].join(', '))+'</td><td class="num'+(e.ex>0?' bad':'')+'">'+fmt(e.ex)+'</td><td class="num">'+fmt(e.ot)+'</td></tr>').join('')
+ +'</tbody><tfoot><tr><td colspan="2">Total ('+a.length+' employees)</td><td class="num">'+fmt(T.ex)+'</td><td class="num">'+fmt(T.ot)+'</td></tr></tfoot></table></div>';
+}
+function drawStack(rs){
+ if(!rs.length)return none('dStack',rec.length?'No records for the selected periods and section.':MSG);
+ const a=agg(rs).sort((x,y)=>y.ot-x.ot).slice(0,10);
+ $('dStack').innerHTML=a.map(e=>{
+  const ok=Math.max(0,e.ot-e.ex),pOk=e.ot?ok/e.ot*100:0,pEx=100-pOk;
+  return '<div class="srow"><div class="nm">'+esc(e.name)+'</div><div class="sbar" role="img" aria-label="'+esc(e.name)+': '+fmt(ok)+' hours within limit, '+fmt(e.ex)+' excessive"><span style="width:'+pOk+'%;background:#168ff5">'+(pOk>14?fmt(ok):'')+'</span><span style="width:'+pEx+'%;background:#292caa">'+(pEx>14?fmt(e.ex):'')+'</span></div><div><b>'+fmt(e.ot)+'</b></div></div>';
+ }).join('');
+}
+function drawLimit(rs){
+ if(!rs.length)return none('dLimit',rec.length?'No records for the selected periods and section.':MSG);
+ const q=$('dSearch').value.trim().toLowerCase(),over=$('dOver').checked;
+ const weeks=[...new Set(rs.map(x=>x.w))].sort((a,b)=>wn(a)-wn(b));
+ let a=agg(rs).filter(e=>(!q||e.name.toLowerCase().includes(q))&&(!over||e.ex>0)).sort((x,y)=>y.ex-x.ex||y.ot-x.ot);
+ if(!a.length)return none('dLimit','No employees match this search.');
+ const cell=v=>v?'<td class="wk"><span class="t">'+fmt(v.ot)+'</span>'+(v.ex>0?'<span class="x">'+fmt(v.ex)+' over</span>':'')+'</td>':'<td></td>';
+ const tw={},T={ot:0,ex:0};
+ a.forEach(e=>{T.ot+=e.ot;T.ex+=e.ex;weeks.forEach(w=>{if(e.w[w]){const k=tw[w]=tw[w]||{ot:0,ex:0};k.ot+=e.w[w].ot;k.ex+=e.w[w].ex}})});
+ const tot=(v,cls)=>'<td class="wk '+cls+'"><span class="t">'+fmt(v.ot)+'</span>'+(v.ex>0?'<span class="x">'+fmt(v.ex)+' over</span>':'')+'</td>';
+ $('dLimit').innerHTML='<div class="scroll"><table class="data-table"><thead><tr><th>Full name</th>'+weeks.map(w=>'<th class="num">'+esc(w)+'</th>').join('')+'<th class="num">Total</th></tr></thead><tbody>'
+ +a.map(e=>'<tr><td>'+esc(e.name)+'</td>'+weeks.map(w=>cell(e.w[w])).join('')+tot(e,e.ex>0?'tot-bad':'tot-ok')+'</tr>').join('')
+ +'</tbody><tfoot><tr><td>Total</td>'+weeks.map(w=>'<td class="wk">'+(tw[w]?fmt(tw[w].ot):'')+'</td>').join('')+'<td class="wk">'+fmt(T.ot)+'</td></tr></tfoot></table></div>';
+}
+function drawWork(rs){
+ const svg=$('dWork'),m={};
+ rs.forEach(x=>{const u=m[x.unit]=m[x.unit]||{ot:0,ex:0,p:new Set()};u.ot+=x.ot;u.ex+=x.ex;u.p.add(x.id)});
+ const e=Object.entries(m).sort((a,b)=>b[1].ot-a[1].ot).slice(0,20);
+ if(!e.length){svg.innerHTML='<text class="axis" x="310" y="170" text-anchor="middle">'+(rec.length?'No records for this selection':'Upload a CSV to see the workshop ranking')+'</text>';return}
+ const W=620,H=340,l=46,r=34,t=12,b=100,pw=W-l-r,ph=H-t-b;
+ const nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v||1)));return Math.ceil((v||1)/p)*p};
+ const mx=nice(Math.max(...e.map(x=>x[1].ot))),mc=nice(Math.max(...e.map(x=>x[1].p.size)));
+ const px=i=>e.length>1?l+i*pw/(e.length-1):l+pw/2,yl=v=>t+ph-v/mx*ph,yr=v=>t+ph-v/mc*ph;
+ let o='';
+ for(let j=0;j<=4;j++){const y=t+j*ph/4;o+='<line class="gridline" x1="'+l+'" x2="'+(W-r)+'" y1="'+y+'" y2="'+y+'"/><text class="axis" x="'+(l-6)+'" y="'+(y+4)+'" text-anchor="end">'+fmt(mx*(1-j/4))+'</text><text class="axis" x="'+(W-r+6)+'" y="'+(y+4)+'">'+fmt(mc*(1-j/4))+'</text>'}
+ const line=(f,c)=>'<polyline fill="none" stroke="'+c+'" stroke-width="2.5" stroke-linejoin="round" points="'+e.map((x,i)=>px(i)+','+f(x[1])).join(' ')+'"/>';
+ o+=line(v=>yl(v.ot),'#168ff5')+line(v=>yl(v.ex),'#292caa')+line(v=>yr(v.p.size),'#ed7138');
+ e.forEach(([n,v],i)=>{
+  o+='<circle cx="'+px(i)+'" cy="'+yl(v.ot)+'" r="3" fill="#168ff5"/><circle cx="'+px(i)+'" cy="'+yl(v.ex)+'" r="3" fill="#292caa"/><circle cx="'+px(i)+'" cy="'+yr(v.p.size)+'" r="3" fill="#ed7138"/>'
+  +'<rect x="'+(px(i)-8)+'" y="'+t+'" width="16" height="'+ph+'" fill="transparent"><title>'+esc(n)+': '+fmt(v.ot)+' OT hrs, '+fmt(v.ex)+' excessive, '+v.p.size+' employees</title></rect>'
+  +'<text class="axis" transform="translate('+px(i)+','+(t+ph+12)+') rotate(-45)" text-anchor="end">'+esc(n.length>20?n.slice(0,19)+'…':n)+'</text>';
+ });
+ svg.innerHTML=o;
+}
+function draw(){const rs=rows();drawEmp(rs);drawStack(rs);drawLimit(rs);drawWork(rs)}
+$('uploadFile').addEventListener('change',e=>{const f=e.target.files[0];if(f)f.text().then(load).catch(err=>console.error('Detail view CSV error:',err))});
+$('section').addEventListener('change',draw);
+$('dSearch').addEventListener('input',()=>drawLimit(rows()));
+$('dOver').addEventListener('change',()=>drawLimit(rows()));
+draw();
+})();
+</script>
+
 </body></html>
