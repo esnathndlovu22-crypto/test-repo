@@ -216,7 +216,7 @@ function render(){
   
   document.getElementById('totalOT').textContent=fmt(t.total);document.getElementById('excessive').textContent=fmt(t.excess);document.getElementById('employeeCount').textContent=String(new Set(periodRecords(i,true).map(r=>r.personnelNo||r.name).filter(Boolean)).size);
   document.getElementById('excessShare').textContent=(t.total?t.excess/t.total*100:0).toFixed(1)+'% of total overtime';
-  document.getElementById('rate').textContent=(t.total?t.excess/t.total*100:0).toFixed(1)+'%';
+  
   const d=document.getElementById('delta');d.textContent=(pct<0?'↓':pct>0?'↑':'→')+' '+Math.abs(pct*100).toFixed(1)+'%';d.style.color=pct<=0?'#16a36d':'#d86b00';
   const entries=Object.entries(vals).sort((a,b)=>b[1].total-a[1].total),high=entries[0],risky=[...entries].sort((a,b)=>(b[1].total?b[1].excess/b[1].total:0)-(a[1].total?a[1].excess/a[1].total:0))[0];
   document.getElementById('highest').textContent=high?high[0]:'—';document.getElementById('highestSub').textContent=high?fmt(high[1].total)+' hrs • '+(t.total?high[1].total/t.total*100:0).toFixed(1)+'% of selected total':'—';
