@@ -29,23 +29,50 @@ main{padding:16px 2.5% 28px;max-width:1600px;margin:auto}.cards{display:grid;gri
 @media(max-width:900px){.analysis-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.plant-row{grid-template-columns:90px 1fr 48px}.data-table th,.data-table td{padding:7px 6px}}
 
+
+/* Screenshot-inspired management dashboard theme */
+:root{--ink:#171c27;--muted:#687384;--line:#27364b;--blue:#168ff5;--blue2:#0878df;--purple:#302caa}
+body{font-family:Inter,"Segoe UI",Arial,sans-serif;color:#20232a;background:linear-gradient(125deg,rgba(37,139,220,.72),rgba(64,72,160,.72)),radial-gradient(ellipse at 20% 10%,#d7efff 0,transparent 35%),radial-gradient(ellipse at 80% 30%,#b5a8e8 0,transparent 42%),linear-gradient(135deg,#8dc8ef,#3d4d9a);background-attachment:fixed}
+body:before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 35% 15%,rgba(255,255,255,.42),transparent 30%),radial-gradient(ellipse at 85% 75%,rgba(25,39,118,.32),transparent 42%);backdrop-filter:blur(3px)}
+.header{margin:7px 9px 10px;padding:9px 3.2%;min-height:70px;justify-content:center;text-align:center;background:linear-gradient(100deg,rgba(117,196,239,.88),rgba(204,190,229,.88));border:1px solid rgba(255,255,255,.55);box-shadow:0 3px 12px rgba(14,42,87,.22);color:#20232a}
+.brand h1{font-size:clamp(20px,3vw,35px);font-weight:850;letter-spacing:.01em}.brand p{display:none}.demo{display:none}.period{display:none}
+.toolbar{margin:0 1.3% 12px;padding:0;background:transparent;border:0;gap:12px;align-items:stretch}
+.control{background:rgba(255,255,255,.82);border:1px solid #24364d;border-radius:13px;padding:11px 14px;min-width:220px;flex:1;display:flex;flex-direction:column;align-items:stretch;gap:6px;box-shadow:0 2px 8px rgba(10,35,74,.12)}
+.control label{font-size:12px;font-weight:700;color:#26364c}.control select{width:100%;min-width:0;border:1px solid #d5d9e2;background:rgba(255,255,255,.35);padding:8px 10px}
+.upload,.export{align-self:center;margin:0;background:#f5faff;border-color:#456e9d;color:#174c81}
+main{max-width:1800px;padding:0 1.3% 28px}
+.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.card,.panel{background:rgba(255,255,255,.84);border:1px solid #1e3149;border-radius:15px;box-shadow:0 3px 10px rgba(12,31,68,.14)}
+.kpi{min-height:130px;padding:12px;justify-content:center;align-items:center;text-align:center;gap:0;background:rgba(149,202,245,.88);border-radius:25px}
+.kpi .icon{display:none}.kpi>div:last-child{width:100%;padding:12px;background:rgba(255,255,255,.94);border:1px solid #d2d7df;min-height:104px;display:flex;flex-direction:column;justify-content:center}
+.kpi h3{font-size:14px;font-weight:500;color:#666;letter-spacing:0;margin:0 0 10px}.big{font-size:clamp(29px,4vw,52px);font-weight:850;color:#171717}.orange{color:#171717}.sub{display:none}
+.visuals{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);grid-template-rows:auto auto;gap:12px;margin-top:12px}
+.panel{padding:10px 13px;border-radius:13px}.panel h2{text-align:center;font-size:16px;font-weight:750;margin:0 0 8px;color:#252525}
+#trendPanel{grid-column:1;grid-row:1}.plant-panel{grid-column:2;grid-row:1 / span 2}.pie-panel{grid-column:1;grid-row:2}
+.chartbox{height:185px}.legend{justify-content:center;margin:4px 0 0;font-size:11px}.line1{stroke:#168ff5}.line2{stroke:#292caa}.point1{fill:#168ff5}.point2{fill:#292caa}
+.barrows{gap:8px}.barrow{grid-template-columns:115px 1fr 42px;gap:7px}.track{height:18px;background:rgba(220,229,240,.75)}.fill{background:#168ff5}
+.analysis-grid{gap:12px;margin-top:12px}.analysis-panel h2{text-align:left;font-size:16px}.attn{margin-top:12px}
+.foot{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.plant-chart{width:100%;height:330px;display:block}.plant-legend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;font-size:11px;color:#626b78;margin-top:3px}.legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+.pie-layout{display:grid;grid-template-columns:minmax(150px,1fr) minmax(110px,.8fr);gap:8px;align-items:center;min-height:165px}.pie-chart{width:100%;height:170px}.pie-legend{font-size:12px;display:grid;gap:6px;color:#5d6672}.pie-item{display:flex;align-items:center;gap:6px}.pie-item span:last-child{overflow-wrap:anywhere}
+@media(max-width:900px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.visuals{grid-template-columns:1fr}.plant-panel,.pie-panel,#trendPanel{grid-column:1;grid-row:auto}.plant-chart{height:280px}}
+@media(max-width:650px){.cards{grid-template-columns:1fr}.toolbar{flex-wrap:wrap}.control{min-width:100%}.upload,.export{width:100%;padding:12px}.kpi{min-height:100px}.kpi>div:last-child{min-height:80px}.pie-layout{grid-template-columns:1fr}.pie-legend{grid-template-columns:1fr 1fr}.analysis-grid{grid-template-columns:1fr}.brand h1{font-size:20px}}
+
 </style>
 </head>
 <body>
-<header class="header"><div class="brand"><h1>ENGINEERING OVERTIME</h1><p>Management dashboard • CSV-driven analysis</p></div><div class="demo">CSV DATA • LOCAL PROCESSING</div><div class="period">▣ &nbsp; Reporting period: <b id="reportPeriod">October 2026</b></div></header>
-<div class="toolbar"><div class="control"><label>Section:</label><select id="section"><option value="All">All sections</option></select></div><div class="control"><label>Period:</label><select id="month"></select></div><button class="upload" id="uploadBtn" type="button">⇧ &nbsp; Upload CSV</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden><button class="export" id="csv">⇩ &nbsp; Export report</button></div>
+<header class="header"><div class="brand"><h1>FIXED PLANTS &amp; ENGINEERING SERVICES OVERTIME DASHBOARD</h1></div></header>
+<div class="toolbar"><div class="control"><label>Date (weeks / reporting period)</label><select id="month"></select></div><div class="control"><label>Section / Organisational Unit</label><select id="section"><option value="All">All sections</option></select></div><button class="upload" id="uploadBtn" type="button">⇧ Upload CSV</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden><button class="export" id="csv">⇩ Export report</button></div>
 <main>
 <section class="cards">
-<div class="card kpi"><div class="icon">◷</div><div><h3>TOTAL OT HOURS</h3><div class="big" id="totalOT">0 hrs</div><div class="sub"><span class="delta" id="delta">→ 0%</span> vs previous month</div></div></div>
-<div class="card kpi"><div class="icon warn">△</div><div><h3>EXCESSIVE OT HOURS</h3><div class="big orange" id="excessive">0 hrs</div><div class="sub" id="excessShare">0% of total overtime</div></div></div>
-<div class="card kpi"><div class="icon">%</div><div><h3>EXCESSIVE OT RATE</h3><div class="big" id="rate">0%</div><div class="sub">Section-level exposure indicator</div></div></div>
-<div class="card kpi"><div class="icon">▥</div><div><h3>HIGHEST OT SECTION</h3><div class="big" id="highest">-</div><div class="sub" id="highestSub">-</div></div></div>
-<div class="card kpi"><div class="icon">◔</div><div><h3>HIGHEST EXCESSIVE-OT SHARE</h3><div class="big" id="riskSection">-</div><div class="sub" id="riskSub">-</div></div></div>
-<div class="card kpi"><div class="icon teal">⌁</div><div><h3>MONTHLY CHANGE</h3><div class="big" id="monthChange">0 hrs</div><div class="sub" id="monthCompare">Current vs previous month</div></div></div>
+<div class="card kpi"><div><h3>Sum of OT Hours</h3><div class="big" id="totalOT">0</div><div class="sub" id="delta">—</div></div></div>
+<div class="card kpi"><div><h3>Count of Employee</h3><div class="big" id="employeeCount">0</div><div class="sub">Employees affected</div></div></div>
+<div class="card kpi"><div><h3>Total Excessive OT Hours Worked</h3><div class="big" id="excessive">0</div><div class="sub" id="excessShare">0% of total overtime</div></div></div>
 </section>
 <section class="visuals">
-<div class="panel"><h2>⌁ &nbsp; Monthly overtime trend</h2><div class="legend"><span><i class="dot teal-dot"></i>Total OT</span><span><i class="dot amber-dot"></i>Excessive OT</span></div><div class="chartbox"><svg id="trend" viewBox="0 0 620 250" preserveAspectRatio="none"></svg></div></div>
-<div class="panel"><h2>▥ &nbsp; Overtime by section</h2><div class="barrows" id="bars"></div></div>
+<div class="panel" id="trendPanel"><h2>Monthly Total OT Worked Trend</h2><div class="chartbox"><svg id="trend" viewBox="0 0 620 250" preserveAspectRatio="none"></svg></div></div>
+<div class="panel plant-panel"><h2>Compliance by Plant YTD</h2><div class="plant-legend"><span><i class="legend-dot" style="background:#168ff5"></i>Excessive OT Hours</span><span><i class="legend-dot" style="background:#292caa"></i>Employees Affected</span></div><svg id="plantChart" class="plant-chart" viewBox="0 0 620 390" preserveAspectRatio="xMidYMid meet"></svg></div>
+<div class="panel pie-panel"><h2>Excessive OT Hours by Section</h2><div class="pie-layout"><svg id="sectionPie" class="pie-chart" viewBox="0 0 260 180"></svg><div id="pieLegend" class="pie-legend"></div></div></div>
 </section>
 <section class="analysis-grid">
 <div class="panel analysis-panel"><h2>Top 10 sections by overtime</h2><div id="topSections" class="empty-state">Upload a CSV file to view section rankings.</div></div>
@@ -134,6 +161,36 @@ function renderBars(vals){
 function renderTrend(){
   const svgEl=document.getElementById('trend');
   if(!data.length){svgEl.innerHTML='';return;}
+  const series=data.map((_,i)=>totals(i)),max=Math.max(1,...series.map(x=>x.total)),w=620,h=250,l=42,r=12,t=12,b=45,slot=(w-l-r)/Math.max(1,series.length),barW=Math.min(42,slot*.62),py=v=>t+(max-v)*(h-t-b)/max;
+  let svg='';
+  for(let j=0;j<=3;j++){const y=t+j*(h-t-b)/3,val=max-j*max/3;svg+='<line class="gridline" x1="'+l+'" y1="'+y+'" x2="'+(w-r)+'" y2="'+y+'"/><text class="axis" x="4" y="'+(y+4)+'">'+fmt(val)+'</text>';}
+  series.forEach((v,i)=>{const x=l+i*slot+(slot-barW)/2,y=py(v.total),height=h-b-y;svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+height+'" fill="#168ff5"/><text class="axis" transform="translate('+(x+barW/2)+','+(h-12)+') rotate(-32)" text-anchor="end">'+esc(months[i])+'</text>';});
+  svgEl.innerHTML=svg;
+}
+function renderPlantChart(i){
+  const sums={},people={};
+  periodRecords(i,false).forEach(r=>{const p=r.plant||'Not specified';sums[p]=(sums[p]||0)+r.excess;const id=r.personnelNo||r.name;if(id){if(!people[p])people[p]=new Set();people[p].add(id);}});
+  const entries=Object.entries(sums).sort((a,b)=>b[1]-a[1]),svg=document.getElementById('plantChart');
+  if(!entries.length){svg.innerHTML='';return;}
+  const max=Math.max(1,...entries.map(([p,v])=>Math.max(v,(people[p]||new Set()).size))),w=620,h=390,l=50,r=12,t=18,b=65,slot=(w-l-r)/entries.length,bw=Math.min(32,slot*.32),py=v=>t+(max-v)*(h-t-b)/max;
+  let out='';
+  for(let j=0;j<=4;j++){const y=t+j*(h-t-b)/4,val=max-j*max/4;out+='<line class="gridline" x1="'+l+'" y1="'+y+'" x2="'+(w-r)+'" y2="'+y+'"/><text class="axis" x="3" y="'+(y+4)+'">'+fmt(val)+'</text>';}
+  entries.forEach(([p,v],n)=>{const x=l+n*slot+slot/2,ex=people[p]?people[p].size:0,y1=py(v),y2=py(ex);out+='<rect x="'+(x-bw-2)+'" y="'+y1+'" width="'+bw+'" height="'+(h-b-y1)+'" fill="#168ff5"/><rect x="'+(x+2)+'" y="'+y2+'" width="'+bw+'" height="'+(h-b-y2)+'" fill="#292caa"/><text class="axis" x="'+x+'" y="'+(h-b+20)+'" text-anchor="middle">'+esc(p.length>13?p.slice(0,12)+'…':p)+'</text>';});
+  svg.innerHTML=out;
+}
+function renderPie(i){
+  const sums={};periodRecords(i,false).forEach(r=>{sums[r.group]=(sums[r.group]||0)+r.excess;});
+  const entries=Object.entries(sums).sort((a,b)=>b[1]-a[1]),total=entries.reduce((a,x)=>a+x[1],0),colors=['#168ff5','#172ca8','#ed7138','#79008b','#e843a7','#5b3287','#19a68c','#5b9bd5','#e2a52c','#607d8b'];
+  const svg=document.getElementById('sectionPie'),legend=document.getElementById('pieLegend');
+  if(!entries.length||!total){svg.innerHTML='';legend.innerHTML='<span>No excessive overtime data.</span>';return;}
+  let angle=-Math.PI/2,paths='';
+  entries.forEach(([name,value],n)=>{const next=angle+value/total*Math.PI*2,x1=130+75*Math.cos(angle),y1=90+75*Math.sin(angle),x2=130+75*Math.cos(next),y2=90+75*Math.sin(next),large=next-angle>Math.PI?1:0;paths+='<path d="M130 90 L'+x1+' '+y1+' A75 75 0 '+large+' 1 '+x2+' '+y2+' Z" fill="'+colors[n%colors.length]+'" stroke="rgba(255,255,255,.85)" stroke-width="1"/>';angle=next;});
+  svg.innerHTML=paths;
+  legend.innerHTML=entries.map(([name,value],n)=>'<div class="pie-item"><i class="legend-dot" style="background:'+colors[n%colors.length]+'"></i><span>'+esc(name)+' • '+fmt(value)+' hrs</span></div>').join('');
+}
+function renderTrend_legacy(){
+  const svgEl=document.getElementById('trend');
+  if(!data.length){svgEl.innerHTML='';return;}
   const series=data.map((_,i)=>totals(i)),max=Math.ceil(Math.max(1,...series.map(x=>x.total))/200)*200,w=620,h=250,l=42,r=12,t=10,b=30,px=i=>l+i*(w-l-r)/Math.max(1,months.length-1),py=v=>t+(max-v)*(h-t-b)/max;
   let svg='';
   for(let j=0;j<=4;j++){let y=t+j*(h-t-b)/4,val=max-j*max/4;svg+='<line class="gridline" x1="'+l+'" y1="'+y+'" x2="'+(w-r)+'" y2="'+y+'"/><text class="axis" x="4" y="'+(y+4)+'">'+fmt(val)+'</text>';}
@@ -146,17 +203,17 @@ function renderTrend(){
 function render(){
   if(!data.length){
     ['totalOT','excessive','rate','highest','riskSection','monthChange'].forEach(id=>document.getElementById(id).textContent=id==='highest'||id==='riskSection'?'—':'0');
-    document.getElementById('reportPeriod').textContent='Awaiting CSV';
+    document.getElementById('employeeCount').textContent='0';
     document.getElementById('delta').textContent='—';document.getElementById('excessShare').textContent='0% of total overtime';
     document.getElementById('highestSub').textContent='—';document.getElementById('riskSub').textContent='—';document.getElementById('monthCompare').textContent='Upload a CSV file to begin';
     document.getElementById('attention').innerHTML='<div>Upload your overtime CSV file to populate the dashboard and management analysis.</div>';
-    renderBars({});renderTrend();
+    renderBars({});renderTrend();renderPlantChart(0);renderPie(0);
     ['topSections','topEmployees','plantBreakdown','topByEngineer'].forEach(id=>showEmpty(id,'Upload a CSV file to view this analysis.'));
     return;
   }
   const i=Math.max(0,Math.min(data.length-1,Number(monthSel.value)||0)),vals=selectedValues(i),t=totals(i),prev=i?totals(i-1):t,change=t.total-prev.total,pct=prev.total?change/prev.total:0;
-  document.getElementById('reportPeriod').textContent=monthNames[i];
-  document.getElementById('totalOT').textContent=fmt(t.total)+' hrs';document.getElementById('excessive').textContent=fmt(t.excess)+' hrs';
+  
+  document.getElementById('totalOT').textContent=fmt(t.total);document.getElementById('excessive').textContent=fmt(t.excess);document.getElementById('employeeCount').textContent=String(new Set(periodRecords(i,true).map(r=>r.personnelNo||r.name).filter(Boolean)).size);
   document.getElementById('excessShare').textContent=(t.total?t.excess/t.total*100:0).toFixed(1)+'% of total overtime';
   document.getElementById('rate').textContent=(t.total?t.excess/t.total*100:0).toFixed(1)+'%';
   const d=document.getElementById('delta');d.textContent=(pct<0?'↓':pct>0?'↑':'→')+' '+Math.abs(pct*100).toFixed(1)+'%';d.style.color=pct<=0?'#16a36d':'#d86b00';
@@ -167,7 +224,7 @@ function render(){
   document.getElementById('monthCompare').textContent=i?monthNames[i]+' vs '+monthNames[i-1]:'First available month';
   renderBars(vals);renderTrend();
   document.getElementById('attention').innerHTML=high?'<div><span class="bullet">●</span><b>'+esc(high[0])+'</b> contributes '+(t.total?high[1].total/t.total*100:0).toFixed(1)+'% of overtime in the selected view.</div><div><span class="bullet">●</span>Review <b>'+esc(risky[0])+'</b>: excessive hours represent '+(risky[1].total?risky[1].excess/risky[1].total*100:0).toFixed(1)+'% of section overtime.</div>':'<div>No overtime records found for this selection.</div>';
-  renderTopSections(i);renderTopEmployees(i);renderPlant(i);renderTopByEngineer(i);
+  renderTopSections(i);renderTopEmployees(i);renderPlant(i);renderTopByEngineer(i);renderPlantChart(i);renderPie(i);
 }
 function parseUploadCSV(raw){
   const rows=[];let row=[],field='',quoted=false;const text=raw.replace(/^\uFEFF/,'');
