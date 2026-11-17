@@ -104,7 +104,7 @@ function populateSelectors(){
 function selectedPeriodIndexes(){
   const keys=Array.isArray(window.__selectedOTPeriodKeys)?window.__selectedOTPeriodKeys:[];
   const indexes=keys.map(k=>periodKeys.indexOf(k)).filter(i=>i>=0);
-  return indexes.length?indexes:[Math.max(0,Math.min(data.length-1,Number(monthSel.value)||0))];
+  return Array.isArray(window.__selectedOTPeriodKeys)?indexes:[Math.max(0,Math.min(data.length-1,Number(monthSel.value)||0))];
 }
 function selectedValues(i){
   const out={};
@@ -173,7 +173,7 @@ function renderBars(vals){
 function renderTrend(){
   const svgEl=document.getElementById('trend');
   if(!data.length){svgEl.innerHTML='';return;}
-  const indexes=selectedPeriodIndexes(),series=indexes.map(i=>totals(i)),labels=indexes.map(i=>months[i]),max=Math.max(1,...series.map(x=>x.total)),w=620,h=250,l=42,r=12,t=12,b=45,slot=(w-l-r)/Math.max(1,series.length),barW=Math.min(42,slot*.62),py=v=>t+(max-v)*(h-t-b)/max;
+  const indexes=selectedPeriodIndexes(),series=indexes.map(i=>Object.entries(data[i]?.values||{}).filter(([section])=>sectionSel.value==='All'||section===sectionSel.value).reduce((a,[,v])=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0})),labels=indexes.map(i=>months[i]),max=Math.max(1,...series.map(x=>x.total)),w=620,h=250,l=42,r=12,t=12,b=45,slot=(w-l-r)/Math.max(1,series.length),barW=Math.min(42,slot*.62),py=v=>t+(max-v)*(h-t-b)/max;
   let svg='';
   for(let j=0;j<=3;j++){const y=t+j*(h-t-b)/3,val=max-j*max/3;svg+='<line class="gridline" x1="'+l+'" y1="'+y+'" x2="'+(w-r)+'" y2="'+y+'"/><text class="axis" x="4" y="'+(y+4)+'">'+fmt(val)+'</text>';}
   series.forEach((v,i)=>{const x=l+i*slot+(slot-barW)/2,y=py(v.total),height=h-b-y;svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+height+'" fill="#168ff5"/><text class="axis" transform="translate('+(x+barW/2)+','+(h-12)+') rotate(-32)" text-anchor="end">'+esc(labels[i])+'</text>';});
