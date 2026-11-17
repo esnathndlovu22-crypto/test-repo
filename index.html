@@ -13,10 +13,26 @@ main{padding:16px 2.5% 28px;max-width:1600px;margin:auto}.cards{display:grid;gri
 .barrows{display:grid;gap:13px;padding-top:3px}.barrow{display:grid;grid-template-columns:130px 1fr 45px;gap:10px;align-items:center;font-size:12px}.barname{text-align:right}.track{height:23px;background:#edf3f6}.fill{height:100%;background:linear-gradient(90deg,#1bb6ad,#35a9a3)}.bval{font-weight:800}
 .attn{margin-top:14px;padding:16px 20px}.attn-title{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}.bang{width:31px;height:31px;background:#f3a10f;color:white;border-radius:50%;display:grid;place-items:center}.attention-body{margin-top:10px;background:linear-gradient(90deg,#fff8e9,#fffaf2);padding:11px 18px;border-radius:5px;font-size:13px}.attention-body div{margin:7px 0}.bullet{color:#f28d08;margin-right:10px}.foot{display:flex;justify-content:space-between;gap:20px;color:#60738c;font-size:11px;margin-top:13px;padding:0 6px}.private-note{font-weight:700;color:#405b74}
 @media(max-width:900px){.cards,.visuals{grid-template-columns:1fr 1fr}.visuals{grid-template-columns:1fr}.demo{margin:0}.export,.upload{margin-left:0}}@media(max-width:600px){.cards{grid-template-columns:1fr}.header{align-items:flex-start}.toolbar{gap:12px}.control{width:100%;justify-content:space-between}.control select{flex:1}.export,.upload{width:100%}.kpi{min-height:auto}.foot{flex-direction:column}.barrow{grid-template-columns:95px 1fr 38px}}
+
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.analysis-panel{min-width:0}
+.table-wrap{overflow-x:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th,.data-table td{padding:9px 8px;border-bottom:1px solid #e4ebf1;text-align:left;vertical-align:top}
+.data-table th{color:#536984;font-size:11px;text-transform:uppercase;letter-spacing:.035em;background:#f7fafc}
+.data-table td.num,.data-table th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rank{font-weight:800;color:#087b86;width:30px}
+.empty-state{padding:18px 12px;text-align:center;color:#60738c;background:#f7fafc;border:1px dashed #d7e1eb;border-radius:6px;font-size:13px}
+.plant-bars{display:grid;gap:10px}
+.plant-row{display:grid;grid-template-columns:minmax(100px,150px) 1fr 58px;gap:9px;align-items:center;font-size:12px}
+.plant-name{overflow-wrap:anywhere}
+@media(max-width:900px){.analysis-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.plant-row{grid-template-columns:90px 1fr 48px}.data-table th,.data-table td{padding:7px 6px}}
+
 </style>
 </head>
 <body>
-<header class="header"><div class="brand"><h1>ENGINEERING OVERTIME</h1><p>Section-level management dashboard</p></div><div class="demo">DEMO • SECTION-LEVEL DATA</div><div class="period">▣ &nbsp; Reporting period: <b id="reportPeriod">October 2026</b></div></header>
+<header class="header"><div class="brand"><h1>ENGINEERING OVERTIME</h1><p>Management dashboard • CSV-driven analysis</p></div><div class="demo">CSV DATA • LOCAL PROCESSING</div><div class="period">▣ &nbsp; Reporting period: <b id="reportPeriod">October 2026</b></div></header>
 <div class="toolbar"><div class="control"><label>Section:</label><select id="section"><option value="All">All sections</option></select></div><div class="control"><label>Period:</label><select id="month"></select></div><button class="upload" id="uploadBtn" type="button">⇧ &nbsp; Upload CSV</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden><button class="export" id="csv">⇩ &nbsp; Export report</button></div>
 <main>
 <section class="cards">
@@ -31,45 +47,177 @@ main{padding:16px 2.5% 28px;max-width:1600px;margin:auto}.cards{display:grid;gri
 <div class="panel"><h2>⌁ &nbsp; Monthly overtime trend</h2><div class="legend"><span><i class="dot teal-dot"></i>Total OT</span><span><i class="dot amber-dot"></i>Excessive OT</span></div><div class="chartbox"><svg id="trend" viewBox="0 0 620 250" preserveAspectRatio="none"></svg></div></div>
 <div class="panel"><h2>▥ &nbsp; Overtime by section</h2><div class="barrows" id="bars"></div></div>
 </section>
+<section class="analysis-grid">
+<div class="panel analysis-panel"><h2>Top 10 sections by overtime</h2><div id="topSections" class="empty-state">Upload a CSV file to view section rankings.</div></div>
+<div class="panel analysis-panel"><h2>Top 10 employees by overtime worked</h2><div id="topEmployees" class="empty-state">Upload a CSV file containing employee names to view this ranking.</div></div>
+<div class="panel analysis-panel"><h2>Overtime by plant</h2><div id="plantBreakdown" class="empty-state">Upload a CSV file containing Plant and OT Hours columns.</div></div>
+<div class="panel analysis-panel"><h2>Top 10 employees by overtime • Engineer in Charge</h2><div id="topByEngineer" class="empty-state">Upload a CSV file containing employee names and Engineer in Charge.</div></div>
+</section>
 <section class="card attn"><div class="attn-title"><span class="bang">!</span>Management attention</div><div class="attention-body" id="attention"></div></section>
-<div class="foot"><span>ⓘ Excessive OT = hours above 14 per employee per week. Threshold is a review indicator, not a fatigue assessment.</span><span class="private-note">Section-level prototype • No employee-level information</span></div>
+<div class="foot"><span>ⓘ Excessive OT = hours above 14 per employee per week. Threshold is a review indicator, not a fatigue assessment.</span><span class="private-note">CSV data is processed locally in this browser</span></div>
 </main>
 <script>
-// DEMO aggregate data only. Replace only with approved section-level values.
-let sections=['MTP','Recrush','Red Area','Engineering Services','JMP','Reliability'];
-let months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
-let monthNames=['January','February','March','April','May','June','July','August','September','October'];
-const base={MTP:420,Recrush:280,'Red Area':200,'Engineering Services':160,JMP:90,Reliability:50};
-const multipliers=[1.42,1.35,1.12,1.18,1.04,1.00,0.98,1.06,1.02,1.00];
-const risk={MTP:.14,Recrush:.25,'Red Area':.16,'Engineering Services':.11,JMP:.09,Reliability:.08};
-let data=months.map((m,i)=>({month:m,values:Object.fromEntries(sections.map(s=>[s,{total:Math.round(base[s]*multipliers[i]),excess:Math.round(base[s]*multipliers[i]*risk[s])}]))}));
-const sectionSel=document.getElementById('section'),monthSel=document.getElementById('month');function populateSelectors(){sectionSel.innerHTML='';sectionSel.add(new Option('All sections','All'));sections.forEach(s=>sectionSel.add(new Option(s,s)));monthSel.innerHTML='';months.forEach((m,i)=>monthSel.add(new Option(monthNames[i],i)));monthSel.value=months.length-1;}populateSelectors();
-const fmt=n=>new Intl.NumberFormat('en-BW',{maximumFractionDigits:0}).format(n);const selectedValues=i=>{const vals=data[i].values;return sectionSel.value==='All'?vals:{[sectionSel.value]:vals[sectionSel.value]}};
-function totals(i){const vals=selectedValues(i);return Object.values(vals).reduce((a,v)=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0})}
-function render(){const i=+monthSel.value,vals=selectedValues(i),t=totals(i),prev=i?totals(i-1):t,change=t.total-prev.total,pct=prev.total?change/prev.total:0;document.getElementById('reportPeriod').textContent=`${monthNames[i]} ${reportYear}`;document.getElementById('totalOT').textContent=`${fmt(t.total)} hrs`;document.getElementById('excessive').textContent=`${fmt(t.excess)} hrs`;document.getElementById('excessShare').textContent=`${(t.excess/t.total*100).toFixed(1)}% of total overtime`;document.getElementById('rate').textContent=`${(t.excess/t.total*100).toFixed(1)}%`;let d=document.getElementById('delta');d.textContent=`${pct<0?'↓':pct>0?'↑':'→'} ${Math.abs(pct*100).toFixed(1)}%`;d.style.color=pct<=0?'#16a36d':'#d86b00';const entries=Object.entries(vals);const high=entries.sort((a,b)=>b[1].total-a[1].total)[0],risky=[...entries].sort((a,b)=>(b[1].excess/b[1].total)-(a[1].excess/a[1].total))[0];document.getElementById('highest').textContent=high[0];document.getElementById('highestSub').textContent=`${fmt(high[1].total)} hrs • ${(high[1].total/t.total*100).toFixed(1)}% of selected total`;document.getElementById('riskSection').textContent=risky[0];document.getElementById('riskSub').textContent=`${(risky[1].excess/risky[1].total*100).toFixed(1)}% of section overtime`;document.getElementById('monthChange').textContent=`${change>0?'+':''}${fmt(change)} hrs`;document.getElementById('monthChange').style.color=change<=0?'#087b86':'#d66c00';document.getElementById('monthCompare').textContent=i?`${monthNames[i]} vs ${monthNames[i-1]}`:`${monthNames[i]} baseline`;
-renderBars(vals);renderTrend();document.getElementById('attention').innerHTML=`<div><span class="bullet">●</span><b>${high[0]}</b> contributes ${(high[1].total/t.total*100).toFixed(1)}% of overtime in the selected view.</div><div><span class="bullet">●</span>Review <b>${risky[0]}</b>: excessive hours represent ${(risky[1].excess/risky[1].total*100).toFixed(1)}% of section overtime.</div>`}
-function renderBars(vals){const sorted=Object.entries(vals).sort((a,b)=>b[1].total-a[1].total),max=Math.max(...sorted.map(x=>x[1].total));document.getElementById('bars').innerHTML=sorted.map(([s,v])=>`<div class="barrow"><div class="barname">${s}</div><div class="track"><div class="fill" style="width:${v.total/max*100}%"></div></div><div class="bval">${fmt(v.total)}</div></div>`).join('')}
-function renderTrend(){const series=data.map((_,i)=>totals(i)),max=Math.ceil(Math.max(...series.map(x=>x.total))/200)*200||200,w=620,h=250,l=42,r=12,t=10,b=30,px=i=>l+i*(w-l-r)/(months.length-1),py=v=>t+(max-v)*(h-t-b)/max;let svg='';for(let j=0;j<=4;j++){let y=t+j*(h-t-b)/4,val=max-j*max/4;svg+=`<line class="gridline" x1="${l}" y1="${y}" x2="${w-r}" y2="${y}"/><text class="axis" x="4" y="${y+4}">${fmt(val)}</text>`}months.forEach((m,i)=>svg+=`<text class="axis" x="${px(i)-8}" y="${h-8}">${m}</text>`);const pts=k=>series.map((v,i)=>`${px(i)},${py(v[k])}`).join(' ');svg+=`<polyline class="line1" points="${pts('total')}"/><polyline class="line2" points="${pts('excess')}"/>`;series.forEach((v,i)=>svg+=`<circle class="point1" cx="${px(i)}" cy="${py(v.total)}" r="4"/><circle class="point2" cx="${px(i)}" cy="${py(v.excess)}" r="4"/>`);document.getElementById('trend').innerHTML=svg}
-let reportYear='2026';
+let sections=[],months=[],monthNames=[],periodKeys=[],data=[],rawRecords=[];
+let reportYear='—';
+const sectionSel=document.getElementById('section'),monthSel=document.getElementById('month');
+const fmt=n=>new Intl.NumberFormat('en-BW',{maximumFractionDigits:1}).format(Number(n)||0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function populateSelectors(){
+  const oldSection=sectionSel.value,oldMonth=monthSel.value;
+  sectionSel.innerHTML='';sectionSel.add(new Option('All sections','All'));
+  sections.forEach(s=>sectionSel.add(new Option(s,s)));
+  if(sections.includes(oldSection))sectionSel.value=oldSection;
+  monthSel.innerHTML='';
+  periodKeys.forEach((key,i)=>monthSel.add(new Option(monthNames[i],String(i))));
+  monthSel.value=periodKeys.length?(periodKeys.includes(oldMonth)?oldMonth:String(periodKeys.length-1)):'';
+  if(periodKeys.includes(oldMonth))monthSel.value=String(periodKeys.indexOf(oldMonth));
+}
+function selectedValues(i){
+  if(!data[i])return {};
+  const vals=data[i].values;
+  if(sectionSel.value==='All')return vals;
+  return vals[sectionSel.value]?{[sectionSel.value]:vals[sectionSel.value]}:{};
+}
+function totals(i){
+  const vals=selectedValues(i);
+  return Object.values(vals).reduce((a,v)=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0});
+}
+function showEmpty(id,message){document.getElementById(id).innerHTML='<div class="empty-state">'+esc(message)+'</div>';}
+function tableHTML(headers,rows){
+  if(!rows.length)return '<div class="empty-state">No matching records for the selected period and section.</div>';
+  return '<div class="table-wrap"><table class="data-table"><thead><tr>'+headers.map((h,i)=>'<th class="'+(i===headers.length-1?'num':'')+'">'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+}
+function periodRecords(i,applySection){
+  if(!data[i])return [];
+  const key=periodKeys[i];
+  return rawRecords.filter(r=>r.periodKey===key&&(!applySection||sectionSel.value==='All'||r.group===sectionSel.value));
+}
+function renderTopSections(i){
+  const sums={};
+  periodRecords(i,false).forEach(r=>{sums[r.group]=(sums[r.group]||0)+r.total;});
+  const ranked=Object.entries(sums).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const rows=ranked.map((x,n)=>'<tr><td class="rank">'+(n+1)+'</td><td>'+esc(x[0])+'</td><td class="num">'+fmt(x[1])+'</td></tr>');
+  document.getElementById('topSections').innerHTML=tableHTML(['#','Section / Organisational Unit','OT Hours'],rows);
+}
+function employeeTotals(records){
+  const people={};
+  records.forEach(r=>{
+    const identity=r.personnelNo||r.name;
+    if(!identity)return;
+    if(!people[identity])people[identity]={name:r.name||'Name not provided',group:new Set(),plant:new Set(),engineer:new Set(),total:0,excess:0};
+    const p=people[identity];if(r.group)p.group.add(r.group);if(r.plant)p.plant.add(r.plant);if(r.engineer)p.engineer.add(r.engineer);
+    p.total+=r.total;p.excess+=r.excess;
+  });
+  return Object.values(people).sort((a,b)=>b.total-a.total);
+}
+function renderTopEmployees(i){
+  const ranked=employeeTotals(periodRecords(i,true)).slice(0,10);
+  const rows=ranked.map((p,n)=>'<tr><td class="rank">'+(n+1)+'</td><td>'+esc(p.name)+'</td><td>'+esc([...p.group].join(', ')||'—')+'</td><td class="num">'+fmt(p.total)+'</td><td class="num">'+fmt(p.excess)+'</td></tr>');
+  document.getElementById('topEmployees').innerHTML=tableHTML(['#','Employee','Section','OT Hours','Excessive OT'],rows);
+}
+function renderPlant(i){
+  const sums={};
+  periodRecords(i,true).forEach(r=>{const name=r.plant||'Not specified';sums[name]=(sums[name]||0)+r.total;});
+  const ranked=Object.entries(sums).sort((a,b)=>b[1]-a[1]),max=ranked.length?ranked[0][1]:0;
+  if(!ranked.length){showEmpty('plantBreakdown','No plant data is available for this selection.');return;}
+  document.getElementById('plantBreakdown').innerHTML='<div class="plant-bars">'+ranked.map(([name,value])=>'<div class="plant-row"><div class="plant-name">'+esc(name)+'</div><div class="track"><div class="fill" style="width:'+(max?value/max*100:0)+'%"></div></div><div class="bval">'+fmt(value)+'</div></div>').join('')+'</div>';
+}
+function renderTopByEngineer(i){
+  const ranked=employeeTotals(periodRecords(i,true)).slice(0,10);
+  const rows=ranked.map((p,n)=>'<tr><td class="rank">'+(n+1)+'</td><td>'+esc(p.name)+'</td><td>'+esc([...p.engineer].join(', ')||'Not specified')+'</td><td class="num">'+fmt(p.total)+'</td></tr>');
+  document.getElementById('topByEngineer').innerHTML=tableHTML(['#','Employee','Engineer in Charge','OT Hours'],rows);
+}
+function renderBars(vals){
+  const sorted=Object.entries(vals).sort((a,b)=>b[1].total-a[1].total),max=sorted.length?Math.max(...sorted.map(x=>x[1].total)):0;
+  document.getElementById('bars').innerHTML=sorted.length?sorted.map(([s,v])=>'<div class="barrow"><div class="barname">'+esc(s)+'</div><div class="track"><div class="fill" style="width:'+(max?v.total/max*100:0)+'%"></div></div><div class="bval">'+fmt(v.total)+'</div></div>').join(''):'<div class="empty-state">Upload a CSV file to view overtime by section.</div>';
+}
+function renderTrend(){
+  const svgEl=document.getElementById('trend');
+  if(!data.length){svgEl.innerHTML='';return;}
+  const series=data.map((_,i)=>totals(i)),max=Math.ceil(Math.max(1,...series.map(x=>x.total))/200)*200,w=620,h=250,l=42,r=12,t=10,b=30,px=i=>l+i*(w-l-r)/Math.max(1,months.length-1),py=v=>t+(max-v)*(h-t-b)/max;
+  let svg='';
+  for(let j=0;j<=4;j++){let y=t+j*(h-t-b)/4,val=max-j*max/4;svg+='<line class="gridline" x1="'+l+'" y1="'+y+'" x2="'+(w-r)+'" y2="'+y+'"/><text class="axis" x="4" y="'+(y+4)+'">'+fmt(val)+'</text>';}
+  months.forEach((m,i)=>svg+='<text class="axis" x="'+(px(i)-8)+'" y="'+(h-8)+'">'+esc(m)+'</text>');
+  const pts=k=>series.map((v,i)=>px(i)+','+py(v[k])).join(' ');
+  svg+='<polyline class="line1" points="'+pts('total')+'"/><polyline class="line2" points="'+pts('excess')+'"/>';
+  series.forEach((v,i)=>svg+='<circle class="point1" cx="'+px(i)+'" cy="'+py(v.total)+'" r="4"/><circle class="point2" cx="'+px(i)+'" cy="'+py(v.excess)+'" r="4"/>');
+  svgEl.innerHTML=svg;
+}
+function render(){
+  if(!data.length){
+    ['totalOT','excessive','rate','highest','riskSection','monthChange'].forEach(id=>document.getElementById(id).textContent=id==='highest'||id==='riskSection'?'—':'0');
+    document.getElementById('reportPeriod').textContent='Awaiting CSV';
+    document.getElementById('delta').textContent='—';document.getElementById('excessShare').textContent='0% of total overtime';
+    document.getElementById('highestSub').textContent='—';document.getElementById('riskSub').textContent='—';document.getElementById('monthCompare').textContent='Upload a CSV file to begin';
+    document.getElementById('attention').innerHTML='<div>Upload your overtime CSV file to populate the dashboard and management analysis.</div>';
+    renderBars({});renderTrend();
+    ['topSections','topEmployees','plantBreakdown','topByEngineer'].forEach(id=>showEmpty(id,'Upload a CSV file to view this analysis.'));
+    return;
+  }
+  const i=Math.max(0,Math.min(data.length-1,Number(monthSel.value)||0)),vals=selectedValues(i),t=totals(i),prev=i?totals(i-1):t,change=t.total-prev.total,pct=prev.total?change/prev.total:0;
+  document.getElementById('reportPeriod').textContent=monthNames[i];
+  document.getElementById('totalOT').textContent=fmt(t.total)+' hrs';document.getElementById('excessive').textContent=fmt(t.excess)+' hrs';
+  document.getElementById('excessShare').textContent=(t.total?t.excess/t.total*100:0).toFixed(1)+'% of total overtime';
+  document.getElementById('rate').textContent=(t.total?t.excess/t.total*100:0).toFixed(1)+'%';
+  const d=document.getElementById('delta');d.textContent=(pct<0?'↓':pct>0?'↑':'→')+' '+Math.abs(pct*100).toFixed(1)+'%';d.style.color=pct<=0?'#16a36d':'#d86b00';
+  const entries=Object.entries(vals).sort((a,b)=>b[1].total-a[1].total),high=entries[0],risky=[...entries].sort((a,b)=>(b[1].total?b[1].excess/b[1].total:0)-(a[1].total?a[1].excess/a[1].total:0))[0];
+  document.getElementById('highest').textContent=high?high[0]:'—';document.getElementById('highestSub').textContent=high?fmt(high[1].total)+' hrs • '+(t.total?high[1].total/t.total*100:0).toFixed(1)+'% of selected total':'—';
+  document.getElementById('riskSection').textContent=risky?risky[0]:'—';document.getElementById('riskSub').textContent=risky?(risky[1].total?risky[1].excess/risky[1].total*100:0).toFixed(1)+'% of section overtime':'—';
+  document.getElementById('monthChange').textContent=(change>0?'+':'')+fmt(change)+' hrs';document.getElementById('monthChange').style.color=change<=0?'#087b86':'#d66c00';
+  document.getElementById('monthCompare').textContent=i?monthNames[i]+' vs '+monthNames[i-1]:'First available month';
+  renderBars(vals);renderTrend();
+  document.getElementById('attention').innerHTML=high?'<div><span class="bullet">●</span><b>'+esc(high[0])+'</b> contributes '+(t.total?high[1].total/t.total*100:0).toFixed(1)+'% of overtime in the selected view.</div><div><span class="bullet">●</span>Review <b>'+esc(risky[0])+'</b>: excessive hours represent '+(risky[1].total?risky[1].excess/risky[1].total*100:0).toFixed(1)+'% of section overtime.</div>':'<div>No overtime records found for this selection.</div>';
+  renderTopSections(i);renderTopEmployees(i);renderPlant(i);renderTopByEngineer(i);
+}
 function parseUploadCSV(raw){
   const rows=[];let row=[],field='',quoted=false;const text=raw.replace(/^\uFEFF/,'');
-  for(let i=0;i<text.length;i++){const ch=text[i];if(ch==='"'){if(quoted&&text[i+1]==='"'){field+='"';i++;}else quoted=!quoted;}else if(ch===','&&!quoted){row.push(field.trim());field='';}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field.trim());field='';if(row.some(v=>v.trim()))rows.push(row);row=[];}else field+=ch;}
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){if(quoted&&text[i+1]==='"'){field+='"';i++;}else quoted=!quoted;}
+    else if(ch===','&&!quoted){row.push(field.trim());field='';}
+    else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field.trim());field='';if(row.some(v=>v.trim()))rows.push(row);row=[];}
+    else field+=ch;
+  }
   if(field.length||row.length){row.push(field.trim());if(row.some(v=>v.trim()))rows.push(row);}
   const norm=v=>(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  const headerIndex=rows.findIndex(r=>{const h=r.map(norm);return (h.includes('group')||h.includes('organizationalunit'))&&h.includes('month')&&h.includes('othours');});
-  if(headerIndex<0)throw new Error('Could not find the required headings. The CSV must contain Month, Group or Organizational Unit, and OT Hours.');
-  const headers=rows[headerIndex].map(norm),idx={group:headers.indexOf('group')>=0?headers.indexOf('group'):headers.indexOf('organizationalunit'),month:headers.indexOf('month'),hours:headers.indexOf('othours'),excess:headers.indexOf('excessiveothours')};
+  const headerIndex=rows.findIndex(r=>{const h=r.map(norm);return h.includes('month')&&h.includes('othours')&&(h.includes('group')||h.includes('organizationalunit'));});
+  if(headerIndex<0)throw new Error('Could not find required headings. The CSV must contain Month, Group or Organizational Unit, and OT Hours.');
+  const headers=rows[headerIndex].map(norm),find=(...names)=>{for(const name of names){const ix=headers.indexOf(name);if(ix>=0)return ix;}return -1;};
+  const idx={group:find('group','organizationalunit'),month:find('month'),hours:find('othours','hours'),excess:find('excessiveothours'),name:find('fullname','employeename','name'),personnel:find('personnelno','personnelnumber','employeeid'),plant:find('plant'),engineer:find('engineerincharge','engineer')};
   const monthMap={jan:'January',january:'January',feb:'February',february:'February',mar:'March',march:'March',apr:'April',april:'April',may:'May',jun:'June',june:'June',jul:'July',july:'July',aug:'August',august:'August',sep:'September',sept:'September',september:'September',oct:'October',october:'October',nov:'November',november:'November',dec:'December',december:'December'};
-  const parsed=[];for(let n=headerIndex+1;n<rows.length;n++){const r=rows[n];if(r.length<=Math.max(idx.group,idx.month,idx.hours))continue;const group=(r[idx.group]||'').trim(),rawMonth=(r[idx.month]||'').trim(),m=monthMap[rawMonth.toLowerCase()]||monthMap[rawMonth.slice(0,3).toLowerCase()],hours=Number((r[idx.hours]||'').replace(/,/g,'')),excess=idx.excess>=0?Number((r[idx.excess]||'0').replace(/,/g,'')):0;if(!group&&!rawMonth&&!r[idx.hours])continue;if(!group||!m||!Number.isFinite(hours)||hours<0||!Number.isFinite(excess)||excess<0)throw new Error('Invalid Group, Month, OT Hours or Excessive OT Hours in CSV data record '+(n-headerIndex)+'.');parsed.push({group,month:m,total:hours,excess});}
+  const monthOrder=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const titleYear=(rows.slice(0,headerIndex).join(' ').match(/20\d{2}/)||[])[0]||'';
+  const parsed=[];
+  for(let n=headerIndex+1;n<rows.length;n++){
+    const r=rows[n],rawMonth=(r[idx.month]||'').trim(),yearMatch=rawMonth.match(/20\d{2}/),monthToken=rawMonth.replace(/20\d{2}/g,'').trim(),m=monthMap[monthToken.toLowerCase()]||monthMap[monthToken.slice(0,3).toLowerCase()];
+    const group=(r[idx.group]||'').trim(),rawHours=(r[idx.hours]||'').trim();
+    if(!group&&!rawMonth&&!rawHours)continue;
+    const hours=Number(rawHours.replace(/,/g,'')),rawExcess=idx.excess>=0?(r[idx.excess]||'0').trim():'0',excess=Number(rawExcess.replace(/,/g,''));
+    if(!group||!m||!Number.isFinite(hours)||hours<0||!Number.isFinite(excess)||excess<0)throw new Error('Invalid section, month or hours on CSV data row '+(n-headerIndex)+'. Check Month, Group/Organizational Unit and OT Hours.');
+    const year=yearMatch?yearMatch[0]:(titleYear||'2026'),periodKey=year+'-'+String(monthOrder.indexOf(m)+1).padStart(2,'0');
+    parsed.push({group,month:m,year,periodKey,total:hours,excess,name:idx.name>=0?(r[idx.name]||'').trim():'',personnelNo:idx.personnel>=0?(r[idx.personnel]||'').trim():'',plant:idx.plant>=0?(r[idx.plant]||'').trim():'',engineer:idx.engineer>=0?(r[idx.engineer]||'').trim():''});
+  }
   if(!parsed.length)throw new Error('No valid overtime records were found in the CSV.');
-  const monthOrder=['January','February','March','April','May','June','July','August','September','October','November','December'],presentMonths=[...new Set(parsed.map(x=>x.month))].sort((a,b)=>monthOrder.indexOf(a)-monthOrder.indexOf(b));
-  const years=[...new Set(rows.slice(headerIndex+1).map(r=>{const v=(r[idx.month]||'').trim();const match=v.match(/20\d{2}/);return match?match[0]:null;}).filter(Boolean))];reportYear=years.length===1?years[0]:(rows[0].join(' ').match(/20\d{2}/)||[])[0]||'2026';
-  sections=[...new Set(parsed.map(x=>x.group))].sort((a,b)=>a.localeCompare(b));months=presentMonths.map(m=>m.slice(0,3));monthNames=presentMonths;
-  data=presentMonths.map(m=>{const values={};sections.forEach(section=>{values[section]={total:0,excess:0};});parsed.filter(x=>x.month===m).forEach(x=>{values[x.group].total+=x.total;values[x.group].excess+=x.excess;});return{month:m.slice(0,3),values};});
+  const uniquePeriods=[...new Set(parsed.map(x=>x.periodKey))].sort();
+  reportYear=[...new Set(parsed.map(x=>x.year))].join(', ');
+  rawRecords=parsed;sections=[...new Set(parsed.map(x=>x.group))].sort((a,b)=>a.localeCompare(b));
+  periodKeys=uniquePeriods;monthNames=uniquePeriods.map(key=>{const rec=parsed.find(x=>x.periodKey===key);return rec.month+' '+rec.year;});months=uniquePeriods.map(key=>{const rec=parsed.find(x=>x.periodKey===key);return rec.month.slice(0,3);});
+  data=uniquePeriods.map(key=>{const values={};sections.forEach(s=>values[s]={total:0,excess:0});parsed.filter(x=>x.periodKey===key).forEach(x=>{values[x.group].total+=x.total;values[x.group].excess+=x.excess;});return{month:key.slice(5),values};});
   populateSelectors();render();
 }
 document.getElementById('uploadBtn').addEventListener('click',()=>document.getElementById('uploadFile').click());
-document.getElementById('uploadFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{parseUploadCSV(await file.text());document.getElementById('attention').insertAdjacentHTML('afterbegin','<div><b>CSV loaded successfully.</b> Dashboard figures now reflect the uploaded file.</div>');}catch(err){alert(err.message);}finally{e.target.value='';}});
-sectionSel.addEventListener('change',render);monthSel.addEventListener('change',render);document.getElementById('csv').addEventListener('click',()=>{const i=+monthSel.value,vals=selectedValues(i),rows=['Section,Month,Total OT Hours,Excessive OT Hours,Excessive OT Rate',...Object.entries(vals).map(([s,v])=>`"${s}",${monthNames[i]} 2026,${v.total},${v.excess},${(v.excess/v.total*100).toFixed(1)}%`)];const blob=new Blob([rows.join('\n')],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`overtime-${months[i].toLowerCase()}-${reportYear}.csv`;a.click();URL.revokeObjectURL(url)});render();
+document.getElementById('uploadFile').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{parseUploadCSV(await file.text());document.getElementById('attention').insertAdjacentHTML('afterbegin','<div><b>CSV loaded successfully.</b> All analyses now reflect the uploaded file. Employee-level data remains in this browser session.</div>');}
+  catch(err){alert(err.message);}
+  finally{e.target.value='';}
+});
+sectionSel.addEventListener('change',render);monthSel.addEventListener('change',render);
+document.getElementById('csv').addEventListener('click',()=>{
+  if(!data.length){alert('Upload a CSV file before exporting.');return;}
+  const i=Number(monthSel.value)||0,vals=selectedValues(i),rows=['Section,Month,Total OT Hours,Excessive OT Hours,Excessive OT Rate',...Object.entries(vals).map(([s,v])=>'"'+s.replace(/"/g,'""')+'","'+monthNames[i]+'",'+v.total+','+v.excess+','+(v.total?v.excess/v.total*100:0).toFixed(1)+'%')];
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='overtime-'+months[i].toLowerCase()+'-'+reportYear.replace(/[^0-9, -]/g,'')+'.csv';a.click();URL.revokeObjectURL(url);
+});
+populateSelectors();render();
 </script>
 </body></html>
