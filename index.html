@@ -101,11 +101,22 @@ function populateSelectors(){
   monthSel.value=periodKeys.length?(periodKeys.includes(oldMonth)?oldMonth:String(periodKeys.length-1)):'';
   if(periodKeys.includes(oldMonth))monthSel.value=String(periodKeys.indexOf(oldMonth));
 }
+function selectedPeriodIndexes(){
+  const keys=Array.isArray(window.__selectedOTPeriodKeys)?window.__selectedOTPeriodKeys:[];
+  const indexes=keys.map(k=>periodKeys.indexOf(k)).filter(i=>i>=0);
+  return indexes.length?indexes:[Math.max(0,Math.min(data.length-1,Number(monthSel.value)||0))];
+}
 function selectedValues(i){
-  if(!data[i])return {};
-  const vals=data[i].values;
-  if(sectionSel.value==='All')return vals;
-  return vals[sectionSel.value]?{[sectionSel.value]:vals[sectionSel.value]}:{};
+  const out={};
+  selectedPeriodIndexes().forEach(index=>{
+    if(!data[index])return;
+    Object.entries(data[index].values).forEach(([section,v])=>{
+      if(sectionSel.value!=='All'&&section!==sectionSel.value)return;
+      if(!out[section])out[section]={total:0,excess:0};
+      out[section].total+=v.total;out[section].excess+=v.excess;
+    });
+  });
+  return out;
 }
 function totals(i){
   const vals=selectedValues(i);
@@ -117,9 +128,8 @@ function tableHTML(headers,rows){
   return '<div class="table-wrap"><table class="data-table"><thead><tr>'+headers.map((h,i)=>'<th class="'+(i===headers.length-1?'num':'')+'">'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
 function periodRecords(i,applySection){
-  if(!data[i])return [];
-  const key=periodKeys[i];
-  return rawRecords.filter(r=>r.periodKey===key&&(!applySection||sectionSel.value==='All'||r.group===sectionSel.value));
+  const keys=new Set(selectedPeriodIndexes().map(index=>periodKeys[index]));
+  return rawRecords.filter(r=>keys.has(r.periodKey)&&(!applySection||sectionSel.value==='All'||r.group===sectionSel.value));
 }
 function renderTopSections(i){
   const sums={};
@@ -163,10 +173,10 @@ function renderBars(vals){
 function renderTrend(){
   const svgEl=document.getElementById('trend');
   if(!data.length){svgEl.innerHTML='';return;}
-  const series=data.map((_,i)=>totals(i)),max=Math.max(1,...series.map(x=>x.total)),w=620,h=250,l=42,r=12,t=12,b=45,slot=(w-l-r)/Math.max(1,series.length),barW=Math.min(42,slot*.62),py=v=>t+(max-v)*(h-t-b)/max;
+  const indexes=selectedPeriodIndexes(),series=indexes.map(i=>totals(i)),labels=indexes.map(i=>months[i]),max=Math.max(1,...series.map(x=>x.total)),w=620,h=250,l=42,r=12,t=12,b=45,slot=(w-l-r)/Math.max(1,series.length),barW=Math.min(42,slot*.62),py=v=>t+(max-v)*(h-t-b)/max;
   let svg='';
   for(let j=0;j<=3;j++){const y=t+j*(h-t-b)/3,val=max-j*max/3;svg+='<line class="gridline" x1="'+l+'" y1="'+y+'" x2="'+(w-r)+'" y2="'+y+'"/><text class="axis" x="4" y="'+(y+4)+'">'+fmt(val)+'</text>';}
-  series.forEach((v,i)=>{const x=l+i*slot+(slot-barW)/2,y=py(v.total),height=h-b-y;svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+height+'" fill="#168ff5"/><text class="axis" transform="translate('+(x+barW/2)+','+(h-12)+') rotate(-32)" text-anchor="end">'+esc(months[i])+'</text>';});
+  series.forEach((v,i)=>{const x=l+i*slot+(slot-barW)/2,y=py(v.total),height=h-b-y;svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+height+'" fill="#168ff5"/><text class="axis" transform="translate('+(x+barW/2)+','+(h-12)+') rotate(-32)" text-anchor="end">'+esc(labels[i])+'</text>';});
   svgEl.innerHTML=svg;
 }
 function renderPlantChart(i){
@@ -213,17 +223,17 @@ function render(){
     ['topSections','topEmployees','plantBreakdown','topByEngineer'].forEach(id=>showEmpty(id,'Upload a CSV file to view this analysis.'));
     return;
   }
-  const i=Math.max(0,Math.min(data.length-1,Number(monthSel.value)||0)),vals=selectedValues(i),t=totals(i),prev=i?totals(i-1):t,change=t.total-prev.total,pct=prev.total?change/prev.total:0;
+  const i=Math.max(0,Math.min(data.length-1,Number(monthSel.value)||0)),indexes=selectedPeriodIndexes(),vals=selectedValues(i),t=Object.values(vals).reduce((a,v)=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0}),prev=i?totals(i-1):t,change=t.total-prev.total,pct=prev.total?change/prev.total:0;
   
   document.getElementById('totalOT').textContent=fmt(t.total);document.getElementById('excessive').textContent=fmt(t.excess);document.getElementById('employeeCount').textContent=String(new Set(periodRecords(i,true).map(r=>r.personnelNo||r.name).filter(Boolean)).size);
   document.getElementById('excessShare').textContent=(t.total?t.excess/t.total*100:0).toFixed(1)+'% of total overtime';
   
-  const d=document.getElementById('delta');d.textContent=(pct<0?'↓':pct>0?'↑':'→')+' '+Math.abs(pct*100).toFixed(1)+'%';d.style.color=pct<=0?'#16a36d':'#d86b00';
+  const d=document.getElementById('delta');d.textContent=indexes.length>1?'Combined selected period':(pct<0?'↓':pct>0?'↑':'→')+' '+Math.abs(pct*100).toFixed(1)+'%';d.style.color=indexes.length>1?'#536984':pct<=0?'#16a36d':'#d86b00';
   const entries=Object.entries(vals).sort((a,b)=>b[1].total-a[1].total),high=entries[0],risky=[...entries].sort((a,b)=>(b[1].total?b[1].excess/b[1].total:0)-(a[1].total?a[1].excess/a[1].total:0))[0];
   document.getElementById('highest').textContent=high?high[0]:'—';document.getElementById('highestSub').textContent=high?fmt(high[1].total)+' hrs • '+(t.total?high[1].total/t.total*100:0).toFixed(1)+'% of selected total':'—';
   document.getElementById('riskSection').textContent=risky?risky[0]:'—';document.getElementById('riskSub').textContent=risky?(risky[1].total?risky[1].excess/risky[1].total*100:0).toFixed(1)+'% of section overtime':'—';
   document.getElementById('monthChange').textContent=(change>0?'+':'')+fmt(change)+' hrs';document.getElementById('monthChange').style.color=change<=0?'#087b86':'#d66c00';
-  document.getElementById('monthCompare').textContent=i?monthNames[i]+' vs '+monthNames[i-1]:'First available month';
+  document.getElementById('monthCompare').textContent=indexes.length>1?indexes.map(x=>monthNames[x]).join(', '):i?monthNames[i]+' vs '+monthNames[i-1]:'First available month';
   renderBars(vals);renderTrend();
   document.getElementById('attention').innerHTML=high?'<div><span class="bullet">●</span><b>'+esc(high[0])+'</b> contributes '+(t.total?high[1].total/t.total*100:0).toFixed(1)+'% of overtime in the selected view.</div><div><span class="bullet">●</span>Review <b>'+esc(risky[0])+'</b>: excessive hours represent '+(risky[1].total?risky[1].excess/risky[1].total*100:0).toFixed(1)+'% of section overtime.</div>':'<div>No overtime records found for this selection.</div>';
   renderTopSections(i);renderTopEmployees(i);renderPlant(i);renderTopByEngineer(i);renderPlantChart(i);renderPie(i);
@@ -274,8 +284,8 @@ document.getElementById('uploadFile').addEventListener('change',async e=>{
 sectionSel.addEventListener('change',render);monthSel.addEventListener('change',render);
 document.getElementById('csv').addEventListener('click',()=>{
   if(!data.length){alert('Upload a CSV file before exporting.');return;}
-  const i=Number(monthSel.value)||0,vals=selectedValues(i),rows=['Section,Month,Total OT Hours,Excessive OT Hours,Excessive OT Rate',...Object.entries(vals).map(([s,v])=>'"'+s.replace(/"/g,'""')+'","'+monthNames[i]+'",'+v.total+','+v.excess+','+(v.total?v.excess/v.total*100:0).toFixed(1)+'%')];
-  const blob=new Blob([rows.join('\n')],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='overtime-'+months[i].toLowerCase()+'-'+reportYear.replace(/[^0-9, -]/g,'')+'.csv';a.click();URL.revokeObjectURL(url);
+  const i=Number(monthSel.value)||0,vals=selectedValues(i),periodLabel=selectedPeriodIndexes().map(x=>monthNames[x]).join(' + '),rows=['Section,Selected Month(s),Total OT Hours,Excessive OT Hours,Excessive OT Rate',...Object.entries(vals).map(([s,v])=>'"'+s.replace(/"/g,'""')+'","'+periodLabel+'",'+v.total+','+v.excess+','+(v.total?v.excess/v.total*100:0).toFixed(1)+'%')];
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='overtime-selected-period-'+reportYear.replace(/[^0-9, -]/g,'')+'.csv';a.click();URL.revokeObjectURL(url);
 });
 populateSelectors();render();
 </script>
@@ -401,9 +411,9 @@ document.addEventListener('click',e=>{if(!ctl.contains(e.target))setPop(false)})
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setPop(false)});
 function syncOverview(){
  const ms=struct().filter(([m,ws])=>ws.some(w=>sel.has(m+'|'+w))).map(x=>x[0]);
- if(!ms.length)return;
- const s=$('month'),i=[...s.options].findIndex(o=>o.text.startsWith(ms[ms.length-1]));
- if(i>=0&&s.selectedIndex!==i){s.selectedIndex=i;s.dispatchEvent(new Event('change'))}
+ window.__selectedOTPeriodKeys=periodKeys.filter((key,i)=>ms.includes(monthNames[i].split(' ')[0]));
+ if(ms.length){const s=$('month'),i=[...s.options].findIndex(o=>o.text.startsWith(ms[ms.length-1]));if(i>=0)s.selectedIndex=i;}
+ render();
 }
 tabs.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
