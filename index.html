@@ -111,14 +111,7 @@ function selectedPeriodIndexes(){
 }
 function selectedValues(i){
   const out={};
-  selectedPeriodIndexes().forEach(index=>{
-    if(!data[index])return;
-    Object.entries(data[index].values).forEach(([section,v])=>{
-      if(sectionSel.value!=='All'&&section!==sectionSel.value)return;
-      if(!out[section])out[section]={total:0,excess:0};
-      out[section].total+=v.total;out[section].excess+=v.excess;
-    });
-  });
+  periodRecords(i,true).forEach(r=>{if(!out[r.group])out[r.group]={total:0,excess:0};out[r.group].total+=r.total;out[r.group].excess+=r.excess;});
   return out;
 }
 function totals(i){
@@ -132,7 +125,8 @@ function tableHTML(headers,rows){
 }
 function periodRecords(i,applySection){
   const keys=new Set(selectedPeriodIndexes().map(index=>periodKeys[index]));
-  return rawRecords.filter(r=>keys.has(r.periodKey)&&(!applySection||sectionSel.value==='All'||r.group===sectionSel.value));
+  const weekKeys=Array.isArray(window.__selectedOTWeekKeys)?new Set(window.__selectedOTWeekKeys):null;
+  return rawRecords.filter(r=>keys.has(r.periodKey)&&(!weekKeys||weekKeys.has(r.month+'|'+(r.week||'Week ?')))&&(!applySection||sectionSel.value==='All'||r.group===sectionSel.value));
 }
 function renderTopSections(i){
   const sums={};
@@ -176,7 +170,7 @@ function renderBars(vals){
 function renderTrend(){
   const svgEl=document.getElementById('trend');
   if(!data.length){svgEl.innerHTML='';return;}
-  const indexes=selectedPeriodIndexes(),series=indexes.map(i=>Object.entries(data[i]?.values||{}).filter(([section])=>sectionSel.value==='All'||section===sectionSel.value).reduce((a,[,v])=>({total:a.total+v.total,excess:a.excess+v.excess}),{total:0,excess:0})),labels=indexes.map(i=>months[i]),max=Math.max(1,...series.map(x=>x.total)),w=620,h=250,l=42,r=12,t=12,b=45,slot=(w-l-r)/Math.max(1,series.length),barW=Math.min(42,slot*.62),py=v=>t+(max-v)*(h-t-b)/max;
+  const rs=periodRecords(0,true),groups=new Map();rs.forEach(r=>{const k=r.month+'|'+(r.week||'Week ?');const v=groups.get(k)||{total:0,excess:0,label:r.month.slice(0,3)+' '+(r.week||'Week ?')};v.total+=r.total;v.excess+=r.excess;groups.set(k,v)});const series=[...groups.values()],labels=series.map(x=>x.label),max=Math.max(1,...series.map(x=>x.total)),w=620,h=250,l=42,r=12,t=12,b=45,slot=(w-l-r)/Math.max(1,series.length),barW=Math.min(42,slot*.62),py=v=>t+(max-v)*(h-t-b)/max;
   let svg='';
   for(let j=0;j<=3;j++){const y=t+j*(h-t-b)/3,val=max-j*max/3;svg+='<line class="gridline" x1="'+l+'" y1="'+y+'" x2="'+(w-r)+'" y2="'+y+'"/><text class="axis" x="4" y="'+(y+4)+'">'+fmt(val)+'</text>';}
   series.forEach((v,i)=>{const x=l+i*slot+(slot-barW)/2,y=py(v.total),height=h-b-y;svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+height+'" fill="#168ff5"/><text class="axis" transform="translate('+(x+barW/2)+','+(h-12)+') rotate(-32)" text-anchor="end">'+esc(labels[i])+'</text>';});
@@ -255,7 +249,7 @@ function parseUploadCSV(raw){
   const headerIndex=rows.findIndex(r=>{const h=r.map(norm);return h.includes('month')&&h.includes('othours')&&(h.includes('group')||h.includes('organizationalunit'));});
   if(headerIndex<0)throw new Error('Could not find required headings. The CSV must contain Month, Group or Organizational Unit, and OT Hours.');
   const headers=rows[headerIndex].map(norm),find=(...names)=>{for(const name of names){const ix=headers.indexOf(name);if(ix>=0)return ix;}return -1;};
-  const idx={group:find('group','organizationalunit'),month:find('month'),hours:find('othours','hours'),excess:find('excessiveothours'),name:find('fullname','employeename','name'),personnel:find('personnelno','personnelnumber','employeeid'),plant:find('plant'),engineer:find('engineerincharge','engineer')};
+  const idx={group:find('group','organizationalunit'),month:find('month'),week:find('week'),hours:find('othours','hours'),excess:find('excessiveothours'),name:find('fullname','employeename','name'),personnel:find('personnelno','personnelnumber','employeeid'),plant:find('plant'),engineer:find('engineerincharge','engineer')};
   const monthMap={jan:'January',january:'January',feb:'February',february:'February',mar:'March',march:'March',apr:'April',april:'April',may:'May',jun:'June',june:'June',jul:'July',july:'July',aug:'August',august:'August',sep:'September',sept:'September',september:'September',oct:'October',october:'October',nov:'November',november:'November',dec:'December',december:'December'};
   const monthOrder=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const titleYear=(rows.slice(0,headerIndex).join(' ').match(/20\d{2}/)||[])[0]||'';
@@ -267,7 +261,7 @@ function parseUploadCSV(raw){
     const hours=Number(rawHours.replace(/,/g,'')),rawExcess=idx.excess>=0?(r[idx.excess]||'0').trim():'0',excess=Number(rawExcess.replace(/,/g,''));
     if(!group||!m||!Number.isFinite(hours)||hours<0||!Number.isFinite(excess)||excess<0)throw new Error('Invalid section, month or hours on CSV data row '+(n-headerIndex)+'. Check Month, Group/Organizational Unit and OT Hours.');
     const year=yearMatch?yearMatch[0]:(titleYear||'2026'),periodKey=year+'-'+String(monthOrder.indexOf(m)+1).padStart(2,'0');
-    parsed.push({group,month:m,year,periodKey,total:hours,excess,name:idx.name>=0?(r[idx.name]||'').trim():'',personnelNo:idx.personnel>=0?(r[idx.personnel]||'').trim():'',plant:idx.plant>=0?(r[idx.plant]||'').trim():'',engineer:idx.engineer>=0?(r[idx.engineer]||'').trim():''});
+    parsed.push({group,month:m,week:idx.week>=0?(r[idx.week]||'Week ?').trim():'Week ?',year,periodKey,total:hours,excess,name:idx.name>=0?(r[idx.name]||'').trim():'',personnelNo:idx.personnel>=0?(r[idx.personnel]||'').trim():'',plant:idx.plant>=0?(r[idx.plant]||'').trim():'',engineer:idx.engineer>=0?(r[idx.engineer]||'').trim():''});
   }
   if(!parsed.length)throw new Error('No valid overtime records were found in the CSV.');
   const uniquePeriods=[...new Set(parsed.map(x=>x.periodKey))].sort();
@@ -293,12 +287,12 @@ document.getElementById('csv').addEventListener('click',()=>{if(!rawRecords.leng
 document.getElementById('closeExport').addEventListener('click',()=>exportModal.style.display='none');
 exportModal.addEventListener('click',e=>{if(e.target===exportModal)exportModal.style.display='none';});
 function reportData(){
- const indexes=selectedPeriodIndexes(),label=indexes.map(x=>monthNames[x]).join(', ')||'No periods selected',rs=periodRecords(Number(monthSel.value)||0,true);
+ const indexes=selectedPeriodIndexes(),rs=periodRecords(Number(monthSel.value)||0,true),label=[...new Set(rs.map(r=>r.month+' '+r.year+' '+(r.week||'')))].join(', ')||'No periods selected';
  const sectionsMap={},people=employeeTotals(rs).sort((a,b)=>b.total-a.total);
  rs.forEach(r=>{let v=sectionsMap[r.group]||(sectionsMap[r.group]={total:0,excess:0});v.total+=r.total;v.excess+=r.excess;});
  const sec=Object.entries(sectionsMap).sort((a,b)=>b[1].total-a[1].total);
  const total=rs.reduce((a,r)=>a+r.total,0),ex=rs.reduce((a,r)=>a+r.excess,0);
- const monthly=indexes.map(i=>{const rec=rawRecords.filter(r=>periodKeys[i]===r.periodKey&&(sectionSel.value==='All'||r.group===sectionSel.value));return {name:monthNames[i],total:rec.reduce((a,x)=>a+x.total,0),excess:rec.reduce((a,x)=>a+x.excess,0)}});
+ const monthly=[...new Set(rs.map(r=>r.month+' '+r.year+' '+(r.week||'')))].map(name=>{const rec=rs.filter(r=>(r.month+' '+r.year+' '+(r.week||''))===name);return {name,total:rec.reduce((a,x)=>a+x.total,0),excess:rec.reduce((a,x)=>a+x.excess,0)}});
  const obs=[];if(sec.length)obs.push('Highest overtime contribution: '+sec[0][0]+' ('+fmt(sec[0][1].total)+' hours).');
  if(people.length)obs.push('Highest individual overtime contributor: '+people[0].name+' ('+fmt(people[0].total)+' hours).');
  obs.push('Excessive overtime represents '+(total?((ex/total)*100).toFixed(1):'0')+'% of recorded overtime hours.');
@@ -469,6 +463,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')setPop(false)});
 function syncOverview(){
  const ms=struct().filter(([m,ws])=>ws.some(w=>sel.has(m+'|'+w))).map(x=>x[0]);
  window.__selectedOTPeriodKeys=periodKeys.filter((key,i)=>ms.includes(monthNames[i].split(' ')[0]));
+  window.__selectedOTWeekKeys=[...sel];
  if(ms.length){const s=$('month'),i=[...s.options].findIndex(o=>o.text.startsWith(ms[ms.length-1]));if(i>=0)s.selectedIndex=i;}
  render();
 }
