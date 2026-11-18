@@ -304,7 +304,7 @@ function reportData(){
 }
 function reportTitle(d){return 'Engineering Overtime Management Report';}
 function pptExport(){
- const d=reportData(),pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author='Engineering Fixed Plants';pptx.subject='Overtime management report';pptx.title=reportTitle(d);
+ const d=reportData(),PptxCtor=window.PptxGenJS||window.pptxgen;if(!PptxCtor)throw new Error('PowerPoint library not loaded');const pptx=new PptxCtor();pptx.layout='LAYOUT_WIDE';pptx.author='Engineering Fixed Plants';pptx.subject='Overtime management report';pptx.title=reportTitle(d);
  const navy='123B60',blue='168FF5',gray='5C6B7B',white='FFFFFF';
  function slide(title,sub){let s=pptx.addSlide();s.background={color:'F3F6FA'};s.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.33,h:.42,fill:{color:navy},line:{color:navy}});s.addText(title,{x:.55,y:.62,w:12.2,h:.5,fontSize:25,bold:true,color:navy,margin:0});if(sub)s.addText(sub,{x:.58,y:1.18,w:12,h:.3,fontSize:11,color:gray,margin:0});s.addText('FIXED PLANTS & ENGINEERING SERVICES  •  OVERTIME REPORT',{x:.55,y:7.18,w:12,h:.18,fontSize:8,color:gray,margin:0});return s}
  let s=pptx.addSlide();s.background={color:navy};s.addText('ENGINEERING OVERTIME REPORT',{x:.75,y:1.5,w:11.8,h:.7,fontSize:31,bold:true,color:white,margin:0});s.addText('Management / EXCO Review',{x:.8,y:2.35,w:11,h:.45,fontSize:20,color:'9FD9FF',margin:0});s.addText('Reporting period: '+d.label,{x:.8,y:3.2,w:11,h:.35,fontSize:16,color:white,margin:0});s.addText('Section: '+d.section,{x:.8,y:3.65,w:11,h:.35,fontSize:15,color:white,margin:0});s.addText('Engineering Fixed Plants & Services',{x:.8,y:6.6,w:11,h:.3,fontSize:11,color:'D6E7F5',margin:0});
@@ -338,7 +338,7 @@ function pdfExport(){
  page('Management attention & recommendations','Review points');d.observations.forEach((x,i)=>doc.text((i+1)+'. '+x,10,50+i*18,{maxWidth:270}));
  doc.save('Engineering_Overtime_Management_Report.pdf');
 }
-document.getElementById('makePpt').addEventListener('click',async()=>{try{if(!window.PptxGenJS){alert('PowerPoint library unavailable. Check internet connection.');return;}await pptExport();exportModal.style.display='none';}catch(e){console.error(e);alert('PowerPoint export failed: '+e.message);}});
+document.getElementById('makePpt').addEventListener('click',async()=>{try{if(!(window.PptxGenJS||window.pptxgen)){alert('PowerPoint library unavailable. Check internet connection.');return;}await pptExport();exportModal.style.display='none';}catch(e){console.error(e);alert('PowerPoint export failed: '+e.message);}});
 document.getElementById('makePdf').addEventListener('click',()=>{try{if(!window.jspdf){alert('PDF library unavailable. Check internet connection.');return;}pdfExport();exportModal.style.display='none';}catch(e){console.error(e);alert('PDF export failed: '+e.message);}});
 
 populateSelectors();render();
