@@ -62,7 +62,7 @@ main{max-width:1800px;padding:0 1.3% 28px}
 </head>
 <body>
 <header class="header"><div class="brand"><h1>FIXED PLANTS &amp; ENGINEERING SERVICES OVERTIME DASHBOARD</h1></div></header>
-<div class="toolbar"><div class="control"><label>Date (weeks / reporting period)</label><select id="month"></select></div><div class="control"><label>Section / Organisational Unit</label><select id="section"><option value="All">All sections</option></select></div><button class="upload" id="uploadBtn" type="button">⇧ Upload CSV</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden><button class="export" id="csv">⇩ Export report</button></div>
+<div class="toolbar"><div class="control"><label>Date (weeks / reporting period)</label><select id="month"></select></div><div class="control"><label>Section / Organisational Unit</label><select id="section"><option value="All">All sections</option></select></div><button class="upload" id="uploadBtn" type="button">⇧ Upload CSV</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden><button class="export" id="csv">⇩ Export presentation</button></div>
 <main>
 <section class="cards">
 <div class="card kpi"><div><h3>Sum of OT Hours</h3><div class="big" id="totalOT">0</div><div class="sub" id="delta">—</div></div></div>
@@ -282,11 +282,65 @@ document.getElementById('uploadFile').addEventListener('change',async e=>{
   finally{e.target.value='';}
 });
 sectionSel.addEventListener('change',render);monthSel.addEventListener('change',render);
-document.getElementById('csv').addEventListener('click',()=>{
-  if(!data.length){alert('Upload a CSV file before exporting.');return;}
-  const i=Number(monthSel.value)||0,vals=selectedValues(i),periodLabel=selectedPeriodIndexes().map(x=>monthNames[x]).join(' + '),rows=['Section,Selected Month(s),Total OT Hours,Excessive OT Hours,Excessive OT Rate',...Object.entries(vals).map(([s,v])=>'"'+s.replace(/"/g,'""')+'","'+periodLabel+'",'+v.total+','+v.excess+','+(v.total?v.excess/v.total*100:0).toFixed(1)+'%')];
-  const blob=new Blob([rows.join('\n')],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='overtime-selected-period-'+reportYear.replace(/[^0-9, -]/g,'')+'.csv';a.click();URL.revokeObjectURL(url);
-});
+const exportModal=document.createElement('div');
+exportModal.id='exportModal';exportModal.style.cssText='display:none;position:fixed;inset:0;z-index:1000;background:rgba(7,25,46,.65);align-items:center;justify-content:center;padding:20px;';
+exportModal.innerHTML='<div style="background:#fff;padding:24px;border-radius:14px;max-width:440px;width:100%;box-shadow:0 18px 45px #0003"><h2 style="margin-top:0;color:#123b61">Export management report</h2><p style="color:#586b80">Generate a presentation using the current selected period and section.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button id="makePpt" style="padding:12px 16px;border:0;border-radius:8px;background:#0b4778;color:white;font-weight:700;cursor:pointer">Export PowerPoint</button><button id="makePdf" style="padding:12px 16px;border:0;border-radius:8px;background:#177fa5;color:white;font-weight:700;cursor:pointer">Export PDF</button><button id="closeExport" style="padding:12px 16px;border:1px solid #ccd6e2;border-radius:8px;background:white;cursor:pointer">Cancel</button></div></div>';
+document.body.appendChild(exportModal);
+document.getElementById('csv').addEventListener('click',()=>{if(!rawRecords.length){alert('Upload a CSV file before exporting.');return;}exportModal.style.display='flex';});
+document.getElementById('closeExport').addEventListener('click',()=>exportModal.style.display='none');
+exportModal.addEventListener('click',e=>{if(e.target===exportModal)exportModal.style.display='none';});
+function reportData(){
+ const indexes=selectedPeriodIndexes(),label=indexes.map(x=>monthNames[x]).join(', ')||'No periods selected',rs=periodRecords(Number(monthSel.value)||0,true);
+ const sectionsMap={},people=employeeTotals(rs).sort((a,b)=>b.total-a.total);
+ rs.forEach(r=>{let v=sectionsMap[r.group]||(sectionsMap[r.group]={total:0,excess:0});v.total+=r.total;v.excess+=r.excess;});
+ const sec=Object.entries(sectionsMap).sort((a,b)=>b[1].total-a[1].total);
+ const total=rs.reduce((a,r)=>a+r.total,0),ex=rs.reduce((a,r)=>a+r.excess,0);
+ const monthly=indexes.map(i=>{const rec=rawRecords.filter(r=>periodKeys[i]===r.periodKey&&(sectionSel.value==='All'||r.group===sectionSel.value));return {name:monthNames[i],total:rec.reduce((a,x)=>a+x.total,0),excess:rec.reduce((a,x)=>a+x.excess,0)}});
+ const obs=[];if(sec.length)obs.push('Highest overtime contribution: '+sec[0][0]+' ('+fmt(sec[0][1].total)+' hours).');
+ if(people.length)obs.push('Highest individual overtime contributor: '+people[0].name+' ('+fmt(people[0].total)+' hours).');
+ obs.push('Excessive overtime represents '+(total?((ex/total)*100).toFixed(1):'0')+'% of recorded overtime hours.');
+ obs.push('Review recurring overtime drivers, staffing balance, workload distribution and approvals for the selected reporting period.');
+ return {label,section:sectionSel.value,year:reportYear,total,ex,employees:people.length,sections:sec,people,monthly,observations:obs};
+}
+function reportTitle(d){return 'Engineering Overtime Management Report';}
+function pptExport(){
+ const d=reportData(),pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author='Engineering Fixed Plants';pptx.subject='Overtime management report';pptx.title=reportTitle(d);
+ const navy='123B60',blue='168FF5',gray='5C6B7B',white='FFFFFF';
+ function slide(title,sub){let s=pptx.addSlide();s.background={color:'F3F6FA'};s.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.33,h:.42,fill:{color:navy},line:{color:navy}});s.addText(title,{x:.55,y:.62,w:12.2,h:.5,fontSize:25,bold:true,color:navy,margin:0});if(sub)s.addText(sub,{x:.58,y:1.18,w:12,h:.3,fontSize:11,color:gray,margin:0});s.addText('FIXED PLANTS & ENGINEERING SERVICES  •  OVERTIME REPORT',{x:.55,y:7.18,w:12,h:.18,fontSize:8,color:gray,margin:0});return s}
+ let s=pptx.addSlide();s.background={color:navy};s.addText('ENGINEERING OVERTIME REPORT',{x:.75,y:1.5,w:11.8,h:.7,fontSize:31,bold:true,color:white,margin:0});s.addText('Management / EXCO Review',{x:.8,y:2.35,w:11,h:.45,fontSize:20,color:'9FD9FF',margin:0});s.addText('Reporting period: '+d.label,{x:.8,y:3.2,w:11,h:.35,fontSize:16,color:white,margin:0});s.addText('Section: '+d.section,{x:.8,y:3.65,w:11,h:.35,fontSize:15,color:white,margin:0});s.addText('Engineering Fixed Plants & Services',{x:.8,y:6.6,w:11,h:.3,fontSize:11,color:'D6E7F5',margin:0});
+ s=slide('Executive summary','Selected period: '+d.label+'  |  Section: '+d.section);
+ const kpis=[['Total overtime hours',fmt(d.total)],['Excessive overtime hours',fmt(d.ex)],['Employees affected',String(d.employees)],['Excessive OT share',d.total?(d.ex/d.total*100).toFixed(1)+'%':'0%']];
+ kpis.forEach((k,i)=>{const x=.6+(i%2)*6.1,y=1.65+Math.floor(i/2)*1.55;s.addShape(pptx.ShapeType.roundRect,{x,y,w:5.65,h:1.15,rectRadius:.12,fill:{color:'FFFFFF'},line:{color:'D8E2EC'}});s.addText(k[0],{x:x+.2,y:y+.18,w:5.2,h:.25,fontSize:12,color:gray,margin:0});s.addText(k[1],{x:x+.2,y:y+.48,w:5.2,h:.45,fontSize:25,bold:true,color:navy,margin:0});});
+ s=slide('Overtime overview','Total hours compared with excessive overtime');
+ s.addChart(pptx.ChartType.doughnut,[{name:'Hours',labels:['Within threshold','Excessive OT'],values:[Math.max(0,d.total-d.ex),d.ex]}],{x:1.3,y:1.6,w:4.8,h:4.3,showLegend:true,legendPos:'b',showPercent:true,chartColors:[blue,'302CAA'],holeSize:55});
+ s.addText('Total OT: '+fmt(d.total)+' hours',{x:7,y:2,w:5,h:.5,fontSize:18,bold:true,color:navy});s.addText('Excessive OT: '+fmt(d.ex)+' hours',{x:7,y:2.8,w:5,h:.5,fontSize:18,bold:true,color:'302CAA'});s.addText('Excessive OT share: '+(d.total?(d.ex/d.total*100).toFixed(1):0)+'%',{x:7,y:3.6,w:5,h:.5,fontSize:16,color:gray});
+ s=slide('Monthly overtime trend','Selected periods only');if(d.monthly.length)s.addChart(pptx.ChartType.bar,[{name:'Total OT',labels:d.monthly.map(x=>x.name),values:d.monthly.map(x=>x.total)},{name:'Excessive OT',labels:d.monthly.map(x=>x.name),values:d.monthly.map(x=>x.excess)}],{x:.7,y:1.5,w:11.8,h:5.3,catAxisLabelFontSize:10,valAxisLabelFontSize:10,showLegend:true,legendPos:'b',chartColors:[blue,'302CAA'],showValue:false});
+ s=slide('Section / workshop analysis','Ranked by total overtime hours');if(d.sections.length)s.addChart(pptx.ChartType.bar,[{name:'Total OT',labels:d.sections.slice(0,10).map(x=>x[0]),values:d.sections.slice(0,10).map(x=>x[1].total)}],{x:.7,y:1.5,w:11.8,h:5.3,catAxisLabelFontSize:10,valAxisLabelFontSize:10,showLegend:false,chartColors:[blue],showValue:true});
+ s=slide('Employee analysis','Top 10 employees by total overtime');s.addTable([['Rank','Employee','Section','Total OT','Excess OT'],...d.people.slice(0,10).map((p,i)=>[i+1,p.name,[...p.group].join(', '),fmt(p.total),fmt(p.excess)])],{x:.55,y:1.5,w:12.2,h:5.4,border:{color:'D8E2EC',pt:1},fontSize:10,fill:'FFFFFF',color:navy,margin:.08});
+ s=slide('Excessive overtime review','Ranked employees with excessive OT');s.addTable([['Rank','Employee','Section','Excess OT','Total OT'],...d.people.filter(p=>p.excess>0).slice(0,15).map((p,i)=>[i+1,p.name,[...p.group].join(', '),fmt(p.excess),fmt(p.total)])],{x:.55,y:1.5,w:12.2,h:5.4,border:{color:'D8E2EC',pt:1},fontSize:10,fill:'FFFFFF',color:navy,margin:.08});
+ s=slide('Management attention & recommended actions','Generated from the selected report data');s.addText(d.observations.map((x,i)=>(i+1)+'. '+x).join('\n\n'),{x:.8,y:1.6,w:11.7,h:4.8,fontSize:17,color:navy,breakLine:false,margin:.1,bullet:false});
+ return pptx.writeFile({fileName:'Engineering_Overtime_Management_Report.pptx'});
+}
+function pdfExport(){
+ const d=reportData(),{jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),navy=[18,59,96],blue=[22,143,245];
+ function head(title,sub){doc.setFillColor(...navy);doc.rect(0,0,297,18,'F');doc.setTextColor(255,255,255);doc.setFontSize(10);doc.text('FIXED PLANTS & ENGINEERING SERVICES  |  OVERTIME REPORT',8,12);doc.setTextColor(...navy);doc.setFontSize(20);doc.text(title,8,29);doc.setFontSize(9);doc.setTextColor(90,105,120);doc.text(sub,8,36);}
+ function page(title,sub){doc.addPage();head(title,sub);}
+ head('Engineering Overtime Management Report','Reporting period: '+d.label+' | Section: '+d.section);
+ doc.setFontSize(18);doc.setTextColor(...navy);doc.text('Management / EXCO Review',8,54);
+ const k=[['Total OT hours',fmt(d.total)],['Excessive OT hours',fmt(d.ex)],['Employees affected',String(d.employees)],['Excessive OT share',d.total?(d.ex/d.total*100).toFixed(1)+'%':'0%']];
+ k.forEach((x,i)=>{const xx=8+(i%2)*142,yy=75+Math.floor(i/2)*38;doc.setFillColor(242,246,250);doc.roundedRect(xx,yy,132,28,3,3,'F');doc.setFontSize(10);doc.setTextColor(90,105,120);doc.text(x[0],xx+4,yy+8);doc.setFontSize(19);doc.setTextColor(...navy);doc.text(x[1],xx+4,yy+21);});
+ page('Overtime overview','Total vs excessive overtime');doc.setFontSize(14);doc.text('Total overtime hours: '+fmt(d.total),12,55);doc.text('Excessive overtime hours: '+fmt(d.ex),12,66);doc.text('Excessive OT share: '+(d.total?(d.ex/d.total*100).toFixed(1):0)+'%',12,77);
+ const chartX=15,chartY=100,chartW=110,chartH=70;doc.setFillColor(...blue);doc.rect(chartX,chartY,chartW*(d.total?Math.max(0,d.total-d.ex)/d.total:0),chartH,'F');doc.setFillColor(48,44,170);doc.rect(chartX+chartW*(d.total?Math.max(0,d.total-d.ex)/d.total:0),chartY,chartW*(d.total?d.ex/d.total:0),chartH,'F');doc.setDrawColor(180,190,200);doc.rect(chartX,chartY,chartW,chartH);doc.setFontSize(10);doc.text('Within limit',chartX,chartY+chartH+8);doc.text('Excessive',chartX+chartW/2,chartY+chartH+8);
+ page('Monthly overtime trend','Selected periods');doc.setFontSize(10);doc.text('Monthly totals',8,45);d.monthly.forEach((x,i)=>{const y=55+i*8;if(y>185){page('Monthly overtime trend (continued)','Selected periods');}doc.text(x.name+'  |  Total: '+fmt(x.total)+'  |  Excessive: '+fmt(x.excess),10,Math.min(190,55+i*8));});
+ page('Section / workshop analysis','Ranked by total OT');d.sections.slice(0,15).forEach((x,i)=>doc.text((i+1)+'. '+x[0]+' — '+fmt(x[1].total)+' OT hours; '+fmt(x[1].excess)+' excessive',10,48+i*9));
+ page('Employee analysis','Top 15 employees by overtime');d.people.slice(0,15).forEach((p,i)=>doc.text((i+1)+'. '+p.name+' | '+[...p.group].join(', ')+' | Total: '+fmt(p.total)+' | Excess: '+fmt(p.excess),10,48+i*9));
+ page('Excessive overtime review','Top employees with excessive overtime');d.people.filter(p=>p.excess>0).slice(0,15).forEach((p,i)=>doc.text((i+1)+'. '+p.name+' | Excessive: '+fmt(p.excess)+' | Total: '+fmt(p.total),10,48+i*9));
+ page('Management attention & recommendations','Review points');d.observations.forEach((x,i)=>doc.text((i+1)+'. '+x,10,50+i*18,{maxWidth:270}));
+ doc.save('Engineering_Overtime_Management_Report.pdf');
+}
+document.getElementById('makePpt').addEventListener('click',async()=>{try{if(!window.PptxGenJS){alert('PowerPoint library unavailable. Check internet connection.');return;}await pptExport();exportModal.style.display='none';}catch(e){console.error(e);alert('PowerPoint export failed: '+e.message);}});
+document.getElementById('makePdf').addEventListener('click',()=>{try{if(!window.jspdf){alert('PDF library unavailable. Check internet connection.');return;}pdfExport();exportModal.style.display='none';}catch(e){console.error(e);alert('PDF export failed: '+e.message);}});
+
 populateSelectors();render();
 </script>
 <!-- ===== OT DETAIL ADD-ON =====
